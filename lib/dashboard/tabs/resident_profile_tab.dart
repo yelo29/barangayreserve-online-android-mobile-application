@@ -26,6 +26,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
   AuthApiService _authApiService = AuthApiService.instance;
   bool _isLoading = true;
   String? _profilePhotoUrl;
+  bool _isLoggingOut = false;
 
   @override
   void initState() {
@@ -366,12 +367,32 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                   Container(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
+                      onPressed: _isLoggingOut ? null : () {
                         print('🔥 Logout button pressed - using official logout method');
+                        setState(() {
+                          _isLoggingOut = true;
+                        });
                         widget.onLogout(context);
+                        // Reset the flag after a delay to allow future logouts
+                        Future.delayed(const Duration(seconds: 2), () {
+                          if (mounted) {
+                            setState(() {
+                              _isLoggingOut = false;
+                            });
+                          }
+                        });
                       },
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Logout'),
+                      icon: _isLoggingOut 
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.logout),
+                      label: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,

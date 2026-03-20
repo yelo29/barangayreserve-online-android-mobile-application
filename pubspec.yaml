@@ -47,6 +47,16 @@ dependencies:
   # HTTP and API dependencies
   http: ^1.2.2
   shared_preferences: ^2.3.3
+  
+  # Google Sign-In dependencies
+  google_sign_in: ^6.2.1
+  google_sign_in_android: ^6.1.26
+  google_sign_in_ios: ^5.7.6
+  google_sign_in_web: ^0.12.4
+  
+  # Additional dependencies for Gmail auth
+  device_info_plus: ^10.1.2
+  flutter_secure_storage: ^9.2.2
 
   # Additional dependencies for the app
   image_picker: ^1.2.1
@@ -55,7 +65,7 @@ dependencies:
   cloudinary_public: ^0.21.0
   permission_handler: ^11.3.1
   url_launcher: ^6.3.0
-  device_info_plus: ^11.1.0
+  flutter_spinkit: ^5.2.1
 
 dev_dependencies:
   flutter_test:

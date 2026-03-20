@@ -658,6 +658,33 @@ class ApiService {
     return await updateProfile(profileData);
   }
 
+  // Update profile with explicit token
+  static Future<Map<String, dynamic>> updateUserProfileWithToken(String token, Map<String, dynamic> profileData) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/users/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode(profileData),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        print('❌ updateUserProfileWithToken failed with status: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+        return {'success': false, 'message': 'Update failed'};
+      }
+    } catch (e) {
+      print('❌ updateUserProfileWithToken error: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   static Future<Map<String, dynamic>> createVerificationRequest(Map<String, dynamic> verificationData) async {
     try {
       print('🔍 createVerificationRequest - Sending data: $verificationData');

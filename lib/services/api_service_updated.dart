@@ -147,6 +147,19 @@ class ApiService {
       } else {
         // If server fails, try to get from preferences
         final prefs = await SharedPreferences.getInstance();
+        
+        // First try to get from JSON data (Gmail auth method)
+        final userDataString = prefs.getString('user_data');
+        if (userDataString != null) {
+          try {
+            final userData = jsonDecode(userDataString);
+            return {'success': true, 'user': userData};
+          } catch (e) {
+            print('❌ ApiServiceUpdated: Error parsing user_data JSON: $e');
+          }
+        }
+        
+        // Fallback to individual keys (legacy method)
         final userEmail = prefs.getString('user_email');
         
         if (userEmail != null) {

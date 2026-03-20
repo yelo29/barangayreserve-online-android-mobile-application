@@ -25,7 +25,7 @@ android {
         applicationId = "ph.barangay.reserve"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion  // Updated from flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion  // Updated for Google Sign-In compatibility
         targetSdk = 36  // Updated to match compileSdk
         versionCode = flutter.versionCode
         versionName = flutter.versionName

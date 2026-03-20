@@ -254,10 +254,19 @@ class AuthApiService {
       print('🔍 Restoring user from token...');
       
       final prefs = await SharedPreferences.getInstance();
-      final userEmail = prefs.getString('user_email');
+      final userDataString = prefs.getString('user_data'); // Use same key as PersistentAuthService
+      
+      if (userDataString == null) {
+        print('❌ No user data found in storage');
+        _currentUser = null;
+        return null;
+      }
+      
+      final userData = jsonDecode(userDataString);
+      final userEmail = userData['email'];
       
       if (userEmail == null) {
-        print('❌ No user email found in storage');
+        print('❌ No user email found in stored data');
         _currentUser = null;
         return null;
       }
@@ -528,54 +537,30 @@ class AuthApiService {
         if (data['success'] == true) {
           final user = data['user'];
           
-          // Convert integer booleans to actual booleans and handle verification types
+          // Handle verification status properly - TRUST SERVER DATA COMPLETELY
           Map<String, dynamic> processedUser = Map<String, dynamic>.from(user);
           
-          // Handle verification status properly - support both int and bool types
+          // Only convert boolean types, DON'T override verification_type from server
           dynamic verifiedStatus = processedUser['verified'];
           if (verifiedStatus is bool) {
-            // Server returned boolean (true/false)
-            if (verifiedStatus == true) {
-              // Check verification_type to determine resident vs non-resident
-              String? verificationType = processedUser['verification_type'];
-              if (verificationType == 'resident') {
-                processedUser['verified'] = true;
-                processedUser['verification_type'] = 'resident';
-              } else if (verificationType == 'non-resident') {
-                processedUser['verified'] = true;
-                processedUser['verification_type'] = 'non-resident';
-              } else {
-                // Default to resident if type is missing
-                processedUser['verified'] = true;
-                processedUser['verification_type'] = 'resident';
-              }
-            } else {
-              processedUser['verified'] = false;
-              processedUser['verification_type'] = null;
-            }
+            // Keep server's verification_type exactly as provided
+            processedUser['verified'] = verifiedStatus;
+            print('🔍 Server returned boolean verified: $verifiedStatus, keeping verification_type: ${processedUser['verification_type']}');
           } else if (verifiedStatus is int) {
-            // Server returned integer (0, 1, 2)
-            int status = verifiedStatus;
-            if (status == 1) {
-              processedUser['verified'] = true;
-              processedUser['verification_type'] = 'resident';
-            } else if (status == 2) {
-              processedUser['verified'] = true;
-              processedUser['verification_type'] = 'non-resident';
-            } else {
-              processedUser['verified'] = false;
-              processedUser['verification_type'] = null;
-            }
+            // Convert integer to boolean but keep server's verification_type
+            processedUser['verified'] = verifiedStatus > 0;
+            print('🔍 Server returned integer verified: $verifiedStatus -> ${verifiedStatus > 0}, keeping verification_type: ${processedUser['verification_type']}');
           } else {
-            // Fallback
+            // Fallback - set to false but don't change verification_type
             processedUser['verified'] = false;
-            processedUser['verification_type'] = null;
+            print('🔍 Unknown verified type: $verifiedStatus, setting to false, keeping verification_type: ${processedUser['verification_type']}');
           }
           
           processedUser['email_verified'] = processedUser['email_verified'] == 1 || processedUser['email_verified'] == true;
           processedUser['is_active'] = processedUser['is_active'] == 1 || processedUser['is_active'] == true;
           
           // Merge with existing user data to preserve fields like profile_photo_url
+          // Server data should take priority over cached data
           if (_currentUser != null) {
             _currentUser = {..._currentUser!, ...processedUser};
           } else {
@@ -643,6 +628,19 @@ class AuthApiService {
   // Get user email from preferences (for compatibility)
   Future<String?> _getUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // First try to get from JSON data (Gmail auth method)
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null) {
+      try {
+        final userData = jsonDecode(userDataString);
+        return userData['email'];
+      } catch (e) {
+        print('❌ AuthApiService: Error parsing user_data JSON: $e');
+      }
+    }
+    
+    // Fallback to individual key (legacy method)
     return prefs.getString('user_email');
   }
 
@@ -729,10 +727,11 @@ class AuthApiService {
 
   bool isVerifiedResident() {
     if (_currentUser != null) {
-      final verified = _currentUser!['verified'] == true;
+      final verified = _currentUser!['verified'] == true || _currentUser!['verified'] == 1;
       final verificationType = _currentUser!['verification_type'] == 'resident';
       final discountRate = _currentUser!['discount_rate'] == 0.1;
-      final result = verified && (verificationType || discountRate);
+      // Must be verified AND specifically resident verification type (not verified_non_resident)
+      final result = verified && verificationType && _currentUser!['verification_type'] != 'verified_non_resident';
       
       print('🔍 isVerifiedResident() debug:');
       print('  - verified: $verified');
@@ -747,10 +746,12 @@ class AuthApiService {
 
   bool isVerifiedNonResident() {
     if (_currentUser != null) {
-      final verified = _currentUser!['verified'] == true;
-      final verificationType = _currentUser!['verification_type'] == 'non-resident';
+      final verified = _currentUser!['verified'] == true || _currentUser!['verified'] == 1;
+      final verificationType = _currentUser!['verification_type'] == 'non-resident' || 
+                             _currentUser!['verification_type'] == 'verified_non_resident';
       final discountRate = _currentUser!['discount_rate'] == 0.05;
-      final result = verified && (verificationType || discountRate);
+      // Must be verified AND specifically non-resident verification type
+      final result = verified && verificationType;
       
       print('🔍 isVerifiedNonResident() debug:');
       print('  - verified: $verified');

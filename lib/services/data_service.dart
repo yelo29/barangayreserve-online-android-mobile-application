@@ -10,13 +10,31 @@ class DataService {
   // Get current user data from SharedPreferences
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // First try to get user data from JSON (Gmail auth method)
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null) {
+      try {
+        final userData = jsonDecode(userDataString);
+        print('✅ DataService: Retrieved user data from JSON');
+        return userData;
+      } catch (e) {
+        print('❌ DataService: Error parsing user_data JSON: $e');
+      }
+    }
+    
+    // Fallback to individual keys (legacy method)
     final userEmail = prefs.getString('user_email');
     final userRole = prefs.getString('user_role');
     final userId = prefs.getString('user_id');
     final userName = prefs.getString('user_name');
     
-    if (userEmail == null) return null;
+    if (userEmail == null) {
+      print('❌ DataService: No user email found in storage');
+      return null;
+    }
     
+    print('✅ DataService: Retrieved user data from individual keys');
     return {
       'email': userEmail,
       'role': userRole ?? 'resident',

@@ -17,6 +17,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config import Config
 from email_service import email_service
+import requests
+import jwt
+import time
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 # Dynamic CORS configuration for DuckDNS
@@ -242,7 +246,8 @@ def get_current_user():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT id, email, full_name, role, verified, discount_rate, contact_number, address, created_at FROM users WHERE email = ?', (email,))
+    # Use the same query as Gmail auth for consistency
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
     user = cursor.fetchone()
     
     conn.close()
@@ -253,19 +258,19 @@ def get_current_user():
             'user': {
                 'id': user[0],
                 'email': user[1],
-                'full_name': user[2],
-                'role': user[3],
-                'verified': user[4],
-                'verification_type': None,  # Default since column doesn't exist
-                'discount_rate': user[5],
-                'contact_number': user[6],
-                'address': user[7],
-                'profile_photo_url': None,  # Default since column doesn't exist
-                'is_active': True,  # Default
-                'email_verified': True,  # Default
-                'last_login': None,  # Default
-                'created_at': user[8],
-                'updated_at': None,  # Default
+                'full_name': user[3],  # Fixed: full_name is at index 3
+                'role': user[4],        # Fixed: role is at index 4
+                'verified': bool(user[5]),  # Fixed: verified is at index 5, convert to bool
+                'verification_type': user[6],  # Fixed: verification_type is at index 6
+                'discount_rate': user[7],    # Fixed: discount_rate is at index 7
+                'contact_number': user[8],    # Fixed: contact_number is at index 8
+                'address': user[9],          # Fixed: address is at index 9
+                'profile_photo_url': user[10],  # Fixed: profile_photo_url is at index 10
+                'is_active': bool(user[12]),  # Fixed: is_active is at index 12
+                'email_verified': bool(user[13]),  # Fixed: email_verified is at index 13
+                'last_login': user[14],       # Fixed: last_login is at index 14
+                'created_at': user[15],       # Fixed: created_at is at index 15
+                'updated_at': user[16],       # Fixed: updated_at is at index 16
             }
         })
     else:
@@ -410,13 +415,13 @@ def get_bookings():
                 # Debug logging for privacy check
                 # Only apply privacy masking for non-official users
                 if user_role != 'official':
-                    # Get user_id for the current user
+                    # Get user_id for current user
                     current_user_id = None
                     if user_email:
                         cursor.execute('SELECT id FROM users WHERE email = ?', (user_email,))
                         user_result = cursor.fetchone()
                         if user_result:
-                            current_user_id = user_result['id']
+                            current_user_id = user_result[0]  # Fixed: Access tuple by index, not dict key
                     
                     is_own_booking = (current_user_id and booking_dict['user_id'] == current_user_id and 
                                     booking_dict['user_email'] and user_email and 
@@ -1930,8 +1935,11 @@ def update_user_profile():
             update_fields.append('address = ?')
             update_values.append(data['address'])
         
+        # Always add updated_at timestamp
+        update_fields.append('updated_at = CURRENT_TIMESTAMP')
+        
         if update_fields:
-            update_fields.append('updated_at = CURRENT_TIMESTAMP')
+            # Add email as the last parameter for WHERE clause
             update_values.append(data['email'])
             
             cursor.execute(f'''
@@ -2008,11 +2016,8 @@ def get_user_profile(email):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT id, email, full_name, role, verified, verification_type, discount_rate, contact_number, address, profile_photo_url, created_at, fake_booking_violations, is_banned, banned_at, ban_reason
-            FROM users 
-            WHERE email = ?
-        ''', (email,))
+        # Use the same query as Gmail auth for consistency
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
         
         user = cursor.fetchone()
         conn.close()
@@ -2023,19 +2028,23 @@ def get_user_profile(email):
                 'user': {
                     'id': user[0],
                     'email': user[1],
-                    'full_name': user[2],
-                    'role': user[3],
-                    'verified': user[4],
-                    'verification_type': user[5],
-                    'discount_rate': user[6],
-                    'contact_number': user[7],
-                    'address': user[8],
-                    'profile_photo_url': user[9],
-                    'created_at': user[10],
-                    'fake_booking_violations': user[11] if len(user) > 11 else 0,
-                    'is_banned': user[12] if len(user) > 12 else False,
-                    'banned_at': user[13] if len(user) > 13 else None,
-                    'ban_reason': user[14] if len(user) > 14 else None
+                    'full_name': user[3],  # Fixed: full_name is at index 3
+                    'role': user[4],        # Fixed: role is at index 4
+                    'verified': bool(user[5]),  # Fixed: verified is at index 5, convert to bool
+                    'verification_type': user[6],  # Fixed: verification_type is at index 6
+                    'discount_rate': user[7],    # Fixed: discount_rate is at index 7
+                    'contact_number': user[8],    # Fixed: contact_number is at index 8
+                    'address': user[9],          # Fixed: address is at index 9
+                    'profile_photo_url': user[10],  # Fixed: profile_photo_url is at index 10
+                    'is_active': bool(user[12]),  # Fixed: is_active is at index 12
+                    'email_verified': bool(user[13]),  # Fixed: email_verified is at index 13
+                    'last_login': user[14],       # Fixed: last_login is at index 14
+                    'created_at': user[15],       # Fixed: created_at is at index 15
+                    'updated_at': user[16],       # Fixed: updated_at is at index 16
+                    'fake_booking_violations': user[18] if len(user) > 18 else 0,  # Fixed: index 18
+                    'is_banned': bool(user[19]) if len(user) > 19 else False,      # Fixed: index 19
+                    'banned_at': user[20] if len(user) > 20 else None,              # Fixed: index 20
+                    'ban_reason': user[21] if len(user) > 21 else None             # Fixed: index 21
                 }
             })
         else:
@@ -2603,6 +2612,210 @@ def update_verification_request(request_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/api/auth/google-login', methods=['POST'])
+def google_login():
+    try:
+        data = request.get_json()
+        id_token = data.get('idToken')
+        email = data.get('email')
+        
+        if not id_token or not email:
+            return jsonify({
+                'success': False,
+                'message': 'Missing idToken or email'
+            }), 400
+        
+        # Verify Google ID token
+        google_response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={id_token}'
+        )
+        
+        if google_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid Google token'
+            }), 401
+        
+        token_data = google_response.json()
+        
+        # Verify the email matches
+        if token_data.get('email') != email:
+            return jsonify({
+                'success': False,
+                'message': 'Email mismatch'
+            }), 401
+        
+        # Check if user exists in database
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+        
+        if user:
+            # Existing user - return user data with correct column mapping
+            user_data = {
+                'id': user[0],
+                'email': user[1],
+                'full_name': user[3],  # full_name is at index 3
+                'role': user[4],        # role is at index 4
+                'verified': bool(user[5]),  # verified is at index 5
+                'verification_type': user[6],  # verification_type is at index 6
+                'discount_rate': user[7],    # discount_rate is at index 7
+                'contact_number': user[8],    # contact_number is at index 8
+                'address': user[9],          # address is at index 9
+                'created_at': user[15]       # created_at is at index 15
+            }
+            
+            # Check if user has complete profile (configured vs unconfigured)
+            has_complete_profile = (
+                user_data['contact_number'] and 
+                user_data['contact_number'].strip() != '' and
+                user_data['address'] and 
+                user_data['address'].strip() != ''
+            )
+            
+            # Generate JWT token for session
+            token_payload = {
+                'user_id': user[0],
+                'email': email,
+                'exp': datetime.now(timezone.utc) + timedelta(days=7)
+            }
+            
+            jwt_token = jwt.encode(token_payload, 'barangay-reserve-secret-key-32-chars-long', algorithm='HS256')
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'user': user_data,
+                'token': jwt_token,
+                'message': 'Login successful',
+                'is_existing_user': True,
+                'has_complete_profile': has_complete_profile  # New flag for profile completeness
+            })
+        else:
+            # User doesn't exist - return error for login attempt
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'Email not registered. Please register first.',
+                'is_existing_user': False
+            }), 404
+            
+    except Exception as e:
+        print(f"❌ Google login error: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/api/auth/google-register', methods=['POST'])
+def google_register():
+    try:
+        data = request.get_json()
+        id_token = data.get('idToken')
+        email = data.get('email')
+        
+        if not id_token or not email:
+            return jsonify({
+                'success': False,
+                'message': 'Missing idToken or email'
+            }), 400
+        
+        # Verify Google ID token
+        google_response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={id_token}'
+        )
+        
+        if google_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid Google token or email may not be correctly spelled'
+            }), 401
+        
+        token_data = google_response.json()
+        
+        # Verify the email matches
+        if token_data.get('email') != email:
+            return jsonify({
+                'success': False,
+                'message': 'Email mismatch'
+            }), 401
+        
+        # Check if user already exists in database
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+        
+        if user:
+            # User already exists - cannot register
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'Account already exists. Please login instead.',
+                'is_existing_user': True
+            }), 409  # Conflict status
+        
+        # New user - create account as UNVERIFIED resident
+        cursor.execute('''
+            INSERT INTO users (email, password, full_name, role, verified, verification_type, discount_rate, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            email,
+            'gmail-auth-no-password',  # placeholder password
+            token_data.get('name', ''),
+            'resident',
+            False,  # Gmail auth = NOT automatically verified - must go through verification process
+            'unverified',  # New Gmail users start as unverified
+            0.0,  # No discount until verified
+            datetime.utcnow()
+        ))
+        
+        user_id = cursor.lastrowid
+        
+        # Get the created user
+        cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+        new_user = cursor.fetchone()
+        
+        user_data = {
+            'id': new_user[0],
+            'email': new_user[1],
+            'full_name': new_user[3],  # full_name is at index 3
+            'role': new_user[4],        # role is at index 4
+            'verified': bool(new_user[5]),  # verified is at index 5
+            'verification_type': new_user[6],  # verification_type is at index 6
+            'discount_rate': new_user[7],    # discount_rate is at index 7
+            'contact_number': new_user[8],    # contact_number is at index 8
+            'address': new_user[9],          # address is at index 9
+            'created_at': new_user[15]       # created_at is at index 15
+        }
+        
+        # Generate JWT token for session
+        token_payload = {
+            'user_id': user_id,
+            'email': email,
+            'exp': datetime.now(timezone.utc) + timedelta(days=7)
+        }
+        
+        jwt_token = jwt.encode(token_payload, 'barangay-reserve-secret-key-32-chars-long', algorithm='HS256')
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'user': user_data,
+            'token': jwt_token,
+            'message': 'Registration successful',
+            'is_existing_user': False
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/')
 def serve_homepage():
     return send_from_directory('.', 'index.html')
@@ -2639,6 +2852,7 @@ if __name__ == '__main__':
     print("   PUT    /api/verification-requests/<id>")
     print("   POST   /api/login")
     print("   POST   /api/register")
+    print("   POST   /api/auth/google-login")
     print("   PUT    /api/users/profile")
     print("   GET    /api/users/profile/<email>")
     print("   POST   /api/setup-sample-data")

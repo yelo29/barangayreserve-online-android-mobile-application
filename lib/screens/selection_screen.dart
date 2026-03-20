@@ -5,6 +5,7 @@ import '../services/ban_detection_service.dart';
 import '../services/persistent_auth_service.dart';
 import '../services/auth_api_service.dart';
 import '../utils/debug_logger.dart';
+import 'resident_auth_screen.dart';
 import 'resident_login_screen.dart';
 import 'official_login_screen.dart';
 import '../config/app_config.dart';
@@ -268,7 +269,7 @@ class _SelectionScreenState extends State<SelectionScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const ResidentLoginScreen(),
+                              builder: (_) => ResidentLoginScreen(),
                             ),
                           );
                         },
