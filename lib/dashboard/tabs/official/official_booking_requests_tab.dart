@@ -410,6 +410,62 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     }
   }
 
+  // Build profile photo widget
+  Widget _buildProfilePhoto(Map<String, dynamic> booking) {
+    final profilePhotoUrl = booking['profile_photo_url'] as String?;
+    
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      // Check if it's a base64 image or URL
+      if (profilePhotoUrl.startsWith('data:image')) {
+        return Image.memory(
+          base64Decode(profilePhotoUrl.split(',')[1]),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        );
+      } else if (profilePhotoUrl.startsWith('http')) {
+        return Image.network(
+          profilePhotoUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        );
+      } else if (profilePhotoUrl.startsWith('/9j/')) {
+        // Raw base64 image without data URI prefix
+        return Image.memory(
+          base64Decode(profilePhotoUrl),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildDefaultAvatar();
+          },
+        );
+      }
+    }
+    
+    // Default avatar if no photo
+    return _buildDefaultAvatar();
+  }
+
+  // Build default avatar
+  Widget _buildDefaultAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade400, Colors.blue.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: const Icon(
+        Icons.person,
+        color: Colors.white,
+        size: 24,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -498,6 +554,21 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                             children: [
                               Row(
                                 children: [
+                                  // Profile photo
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(25),
+                                      border: Border.all(color: Colors.grey.shade300),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(25),
+                                      child: _buildProfilePhoto(booking),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  
                                   Expanded(
                                     child: Text(
                                       facilityName,

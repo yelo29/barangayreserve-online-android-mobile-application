@@ -1717,37 +1717,28 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   }
 
   // Open GCash app or Play Store
-  void _openGCashApp() async {
-    const gcashUrl = 'gcash://';
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
+  Future<void> _openGCashApp() async {
+    // Use the gcash:// scheme to trigger the app
+    final Uri gcashUri = Uri.parse("gcash://");
     
     try {
-      // Try to open GCash app first
-      final uri = Uri.parse(gcashUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Check if the app is installed
+      if (await canLaunchUrl(gcashUri)) {
+        await launchUrl(
+          gcashUri, 
+          mode: LaunchMode.externalApplication, // This forces Android to open the native app
+        );
       } else {
-        // Fallback to Play Store
-        final playStoreUri = Uri.parse(playStoreUrl);
-        if (await canLaunchUrl(playStoreUri)) {
-          await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Could not open GCash or Play Store'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
+        // If GCash is not installed, redirect them to the Play Store
+        final Uri playStoreUri = Uri.parse("market://details?id=com.globe.gcash.android");
+        await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      print('Error opening GCash: $e');
+      print("Could not launch GCash: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening GCash: $e'),
+            content: Text('Could not open GCash: $e'),
             backgroundColor: Colors.red,
           ),
         );

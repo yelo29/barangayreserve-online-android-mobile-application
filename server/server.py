@@ -326,7 +326,7 @@ def get_bookings():
                        b.status, b.priority_level, b.approved_by, b.approved_at,
                        b.rejection_reason, b.is_competitive, b.competing_booking_ids,
                        b.competition_resolved, b.created_at, b.updated_at,
-                       f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                       f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
@@ -365,7 +365,7 @@ def get_bookings():
                 'status', 'priority_level', 'approved_by', 'approved_at',
                 'rejection_reason', 'is_competitive', 'competing_booking_ids',
                 'competition_resolved', 'created_at', 'updated_at',
-                'facility_name', 'full_name', 'user_email', 'verified', 'discount_rate', 'user_role'
+                'facility_name', 'full_name', 'user_email', 'verified', 'discount_rate', 'user_role', 'profile_photo_url'
             ]
             
             for booking in bookings:
@@ -380,7 +380,7 @@ def get_bookings():
             
             # Build query with optional facility and date filtering
             query = '''
-                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
@@ -472,7 +472,7 @@ def get_bookings():
             
             # Build query with optional facility and date filtering
             query = '''
-                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
