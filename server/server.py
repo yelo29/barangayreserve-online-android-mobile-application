@@ -1026,6 +1026,10 @@ def create_booking():
         booking_status = 'approved' if is_official_booking else data.get('status', 'pending')
         print(f"🔍 DEBUG: Setting booking status to: {booking_status}")
         
+        # Get current timestamp for debugging
+        current_timestamp = datetime.now()
+        print(f"🔍 DEBUG: Server timestamp at booking creation: {current_timestamp}")
+        
         cursor.execute('''
             INSERT INTO bookings (facility_id, user_id, booking_date, start_time, end_time, status, purpose, total_amount, contact_number, contact_address, booking_reference, time_slot_id, duration_hours, base_rate, downpayment_amount, receipt_base64)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1050,6 +1054,14 @@ def create_booking():
         
         booking_id = cursor.lastrowid
         conn.commit()
+        
+        # Fetch the created booking to check the timestamp
+        cursor.execute('SELECT created_at FROM bookings WHERE id = ?', (booking_id,))
+        stored_timestamp = cursor.fetchone()
+        if stored_timestamp:
+            print(f"🔍 DEBUG: Stored timestamp in database: {stored_timestamp[0]}")
+        else:
+            print(f"🔍 DEBUG: No timestamp found for booking ID: {booking_id}")
         
         # Send email notification to officials about new booking request (only for residents)
         if not is_official_booking:

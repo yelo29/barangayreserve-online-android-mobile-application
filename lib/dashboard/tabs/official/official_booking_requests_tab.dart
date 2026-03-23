@@ -515,6 +515,22 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                     print('🔍 Official booking data: $booking'); // Debug logging
                     final facilityName = booking['facility_name'] ?? booking['facilityName'] ?? 'Unknown Facility';
                     final date = booking['booking_date'] ?? booking['date'] ?? '';
+                    String submittedDate = '';
+                    if (booking['created_at'] != null) {
+                      try {
+                        final dateTime = DateTime.parse(booking['created_at']);
+                        print('🔍 DEBUG: Original created_at: ${booking['created_at']}');
+                        print('🔍 DEBUG: Parsed DateTime (UTC): $dateTime');
+                        // Convert UTC to Philippines timezone (UTC+8)
+                        final philippinesTime = dateTime.add(const Duration(hours: 8));
+                        print('🔍 DEBUG: Philippines DateTime: $philippinesTime');
+                        submittedDate = '${philippinesTime.year}-${philippinesTime.month.toString().padLeft(2, '0')}-${philippinesTime.day.toString().padLeft(2, '0')} ${philippinesTime.hour.toString().padLeft(2, '0')}:${philippinesTime.minute.toString().padLeft(2, '0')}';
+                        print('🔍 DEBUG: Formatted submittedDate: $submittedDate');
+                      } catch (e) {
+                        print('🔍 DEBUG: Error parsing date: $e');
+                        submittedDate = booking['created_at'].toString().split('T')[0] ?? '';
+                      }
+                    }
                     final timeslot = booking['start_time'] ?? booking['timeslot'] ?? '';
                     final fullName = booking['full_name']?.isNotEmpty == true ? booking['full_name'] : booking['user_email'] ?? 'Unknown User';
                     final userEmail = booking['user_email'] ?? 'Not provided';
@@ -672,7 +688,8 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                               const SizedBox(height: 8),
                               
                               // Booking details
-                              _buildDetailRow('Date', date),
+                              _buildDetailRow('Booking Date', date),
+                              _buildDetailRow('Submitted Date', submittedDate),
                               _buildDetailRow('Time', timeslot),
                               _buildDetailRow('Name', fullName),
                               _buildDetailRow('Contact', contactNumber),

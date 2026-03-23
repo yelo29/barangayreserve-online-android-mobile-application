@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import '../services/data_service.dart';
 import '../services/base64_image_service.dart';
 
 class BookingDetailScreen extends StatefulWidget {
@@ -295,6 +295,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       DateTime date;
       if (dateValue is String) {
         date = DateTime.parse(dateValue);
+        print('🔍 DEBUG: BookingDetail - Original created_at: $dateValue');
+        print('🔍 DEBUG: BookingDetail - Parsed DateTime (UTC): $date');
       } else if (dateValue is int) {
         date = DateTime.fromMillisecondsSinceEpoch(dateValue);
       } else {
@@ -305,8 +307,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           return dateValue.toString();
         }
       }
-      return DateFormat.yMMMMd().add_jm().format(date.toLocal());
+      
+      // Convert UTC to Philippines timezone (UTC+8)
+      final philippinesTime = date.add(const Duration(hours: 8));
+      print('🔍 DEBUG: BookingDetail - Philippines DateTime: $philippinesTime');
+      final formatted = DateFormat.yMMMMd().add_jm().format(philippinesTime);
+      print('🔍 DEBUG: BookingDetail - Formatted date: $formatted');
+      return formatted;
     } catch (e) {
+      print('🔍 DEBUG: BookingDetail - Error formatting date: $e');
       return dateValue.toString();
     }
   }
