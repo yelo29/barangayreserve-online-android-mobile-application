@@ -40,7 +40,8 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
 
   // Helper function to get facility rate with fallback
   String _getFacilityRate(Map<String, dynamic> facility) {
-    final rate = facility['rate'] ?? facility['price'] ?? facility['base_rate'];
+    // Check the actual database fields first
+    final rate = facility['hourly_rate'] ?? facility['rate'] ?? facility['price'] ?? facility['base_rate'];
     if (rate != null) return rate.toString();
     
     final facilityName = facility['name']?.toString().toLowerCase() ?? '';
@@ -59,7 +60,8 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
 
   // Helper function to get facility downpayment with fallback
   String _getFacilityDownpayment(Map<String, dynamic> facility) {
-    final downpayment = facility['downpayment'] ?? facility['downpayment_amount'];
+    // Check the actual database fields first
+    final downpayment = facility['downpayment_rate'] ?? facility['downpayment'] ?? facility['downpayment_amount'];
     if (downpayment != null) return downpayment.toString();
     
     final rate = double.tryParse(_getFacilityRate(facility)) ?? 200.0;

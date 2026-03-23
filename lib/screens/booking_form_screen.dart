@@ -84,7 +84,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   // Helper function to get facility rate with fallback
   String _getFacilityRate(Map<String, dynamic> facility) {
-    final rate = facility['rate'] ?? facility['price'] ?? facility['base_rate'];
+    // Check the actual database fields first
+    final rate = facility['hourly_rate'] ?? facility['rate'] ?? facility['price'] ?? facility['base_rate'];
     if (rate != null) return rate.toString();
     
     final facilityName = facility['name']?.toString().toLowerCase() ?? '';
@@ -103,7 +104,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   // Helper function to get facility downpayment with fallback
   String _getFacilityDownpayment(Map<String, dynamic> facility) {
-    final downpayment = facility['downpayment'] ?? facility['downpayment_amount'];
+    // Check the actual database fields first
+    final downpayment = facility['downpayment_rate'] ?? facility['downpayment'] ?? facility['downpayment_amount'];
     if (downpayment != null) return downpayment.toString();
     
     final rate = double.tryParse(_getFacilityRate(facility)) ?? 200.0;
@@ -754,7 +756,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         'user_email': widget.userData?['email'] ?? 'user@example.com',
         'date': widget.selectedDate.toIso8601String().split('T')[0],
         'timeslot': _selectedTimeSlot,
-        'total_amount': widget.facility['hourly_rate'] ?? widget.facility['rate'] ?? widget.facility['price'] ?? 0,
+        'total_amount': widget.facility['hourly_rate'] ?? widget.facility['rate'] ?? widget.facility['price'] ?? widget.facility['base_rate'] ?? 0,
         'status': _isOfficial ? 'approved' : 'pending', // Officials get auto-approved
       };
 
