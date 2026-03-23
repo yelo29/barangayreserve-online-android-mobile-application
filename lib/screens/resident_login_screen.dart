@@ -59,9 +59,57 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
         }
       } else {
         if (mounted) {
-          setState(() {
-            _errorMessage = result['message'] ?? 'Gmail registration failed';
-          });
+          // Check if this is a ban error
+          if (result['error_type'] == 'user_banned') {
+            // Show ban dialog for banned users
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red, size: 28),
+                      SizedBox(width: 10),
+                      Text('Account Banned', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result['message'] ?? 'Your account has been banned.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      if (result['ban_reason'] != null) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          'Reason: ${result['ban_reason']}',
+                          style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                      SizedBox(height: 15),
+                      Text(
+                        'Please contact the barangay office if you believe this is an error.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('OK', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            // Regular error handling
+            setState(() {
+              _errorMessage = result['message'] ?? 'Gmail registration failed';
+            });
+          }
         }
       }
     } catch (e) {
@@ -127,9 +175,57 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
         }
       } else {
         if (mounted) {
-          setState(() {
-            _errorMessage = result['message'] ?? 'Gmail login failed';
-          });
+          // Check if this is a ban error
+          if (result['error_type'] == 'user_banned') {
+            // Show ban dialog for banned users
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red, size: 28),
+                      SizedBox(width: 10),
+                      Text('Account Banned', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result['message'] ?? 'Your account has been banned.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      if (result['ban_reason'] != null) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          'Reason: ${result['ban_reason']}',
+                          style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                      SizedBox(height: 15),
+                      Text(
+                        'Please contact the barangay office if you believe this is an error.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('OK', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            // Regular error handling
+            setState(() {
+              _errorMessage = result['message'] ?? 'Gmail login failed';
+            });
+          }
         }
       }
     } catch (e) {

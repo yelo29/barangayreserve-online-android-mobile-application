@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 class PersistentAuthService {
   static const String _tokenKey = 'auth_token';
@@ -84,6 +86,35 @@ class PersistentAuthService {
       final userDataString = prefs.getString(_userKey);
       if (userDataString != null) {
         final userData = jsonDecode(userDataString);
+        
+        // Check ban status before returning user data
+        try {
+          final userEmail = userData['email'];
+          if (userEmail != null) {
+            // Direct ban status check to avoid circular dependency
+            final response = await http.get(
+              Uri.parse('${AppConfig.baseUrl}/api/users/status/$userEmail'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ${prefs.getString(_tokenKey) ?? ''}',
+              },
+            );
+            
+            if (response.statusCode == 200) {
+              final userStatus = json.decode(response.body);
+              if (userStatus['is_banned'] == true) {
+                print('🚨 PersistentAuth: User is banned - clearing login state');
+                print('🚨 Ban reason: ${userStatus['ban_reason']}');
+                await clearLoginState();
+                return null;
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ PersistentAuth: Error checking ban status: $e');
+          // Continue with login but log the error
+        }
+        
         print('✅ PersistentAuth: Retrieved user data for device: ${deviceInfo.id}');
         return userData;
       }

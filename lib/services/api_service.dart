@@ -701,6 +701,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return data;
+      } else if (response.statusCode == 403) {
+        // Handle ban errors specifically
+        final data = json.decode(response.body);
+        return data; // Return the ban error structure directly
       } else {
         return {'success': false, 'message': 'Failed to create verification request - HTTP ${response.statusCode}'};
       }

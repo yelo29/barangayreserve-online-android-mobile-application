@@ -1,9 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../services/auth_api_service.dart';
 import '../services/api_service.dart';
 import '../services/base64_image_service.dart';
+import '../services/ban_validation_service.dart';
+import '../services/auth_api_service.dart';
 
 class ResidentVerificationScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -247,21 +249,11 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
       return;
     }
 
-    if (_profileImage == null) {
+    if (_profileImage == null || _idImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please upload a profile photo'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    if (_idImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload a valid ID'),
-          backgroundColor: Colors.orange,
+          content: Text('Please upload both profile photo and ID photo'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
@@ -272,6 +264,13 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
     });
 
     try {
+      // Check ban status first
+      final banValidation = await BanValidationService.validateUserForVerification();
+      if (!banValidation['allowed']) {
+        BanValidationService.showBanDialog(context, banValidation);
+        return;
+      }
+
       // Upload images first
       final uploadSuccess = await _uploadImages();
       
@@ -323,7 +322,14 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
         );
         Navigator.pop(context);
       } else {
-        throw Exception(result['error'] ?? 'Failed to submit verification');
+        // Check if it's a ban error
+        if (result['error_type'] == 'user_banned') {
+          print('🚫 Ban error detected: ${result['message']}');
+          BanValidationService.showBanDialog(context, result);
+        } else {
+          print('❌ Verification error: ${result['message']}');
+          throw Exception(result['message'] ?? 'Failed to submit verification');
+        }
       }
     } catch (e) {
       if (mounted) {

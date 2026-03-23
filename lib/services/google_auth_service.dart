@@ -137,6 +137,38 @@ class GoogleAuthService {
       if (response.statusCode == 200 || response.statusCode == 409 || response.statusCode == 404) {
         try {
           final data = json.decode(response.body);
+          
+          // Check if user is banned BEFORE returning success
+          if (data['success'] == true && data['user'] != null) {
+            final userEmail = data['user']['email'];
+            print('🔍 Checking ban status for user: $userEmail');
+            
+            // Check server-side ban status
+            final banResponse = await http.get(
+              Uri.parse('https://barangayreserve.dpdns.org/api/users/status/$userEmail'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $idToken',
+              },
+            );
+            
+            if (banResponse.statusCode == 200) {
+              final banStatus = json.decode(banResponse.body);
+              if (banStatus['is_banned'] == true) {
+                print('🚨 User is banned - blocking login');
+                return {
+                  'success': false,
+                  'error_type': 'user_banned',
+                  'message': 'Account is banned. ${banStatus['ban_reason'] ?? 'Cannot login.'}',
+                  'ban_reason': banStatus['ban_reason'],
+                };
+              }
+              print('✅ User is not banned - login allowed');
+            } else {
+              print('⚠️ Could not verify ban status - proceeding with login (fail-safe)');
+            }
+          }
+          
           return data;
         } catch (e) {
           return {
