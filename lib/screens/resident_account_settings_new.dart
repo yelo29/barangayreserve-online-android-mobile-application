@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 import '../../../services/auth_api_service.dart';
 import '../../../services/data_service.dart';
+import '../../../services/ban_validation_service.dart';
 import '../../../utils/debug_logger.dart';
 
 class ResidentAccountSettingsScreen extends StatefulWidget {
@@ -134,6 +135,19 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
   Future<void> _updatePersonalInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 🚫 BAN VALIDATION: Check if user is banned before allowing profile updates
+    if (_currentUser != null && _currentUser!['is_banned'] == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Banned users cannot update profile information'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -188,6 +202,19 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
 
   Future<void> _pickAndUploadProfilePhoto() async {
     try {
+      // 🚫 BAN VALIDATION: Check if user is banned before allowing photo upload
+      if (_currentUser != null && _currentUser!['is_banned'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Banned users cannot change profile photo'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _isUploadingPhoto = true;
       });
@@ -253,6 +280,80 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
 
   @override
   Widget build(BuildContext context) {
+    // 🚫 BAN VALIDATION: Check if user is banned before allowing access
+    if (_currentUser != null && _currentUser!['is_banned'] == true) {
+      return Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('Account Restricted'),
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.block,
+                  size: 80,
+                  color: Colors.red[400],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Account Banned',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Your account has been banned and cannot access account settings.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _currentUser!['ban_reason'] ?? 'Contact the barangay office for more information.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    BanValidationService.showBanDialog(context, {
+                      'success': false,
+                      'error_type': 'user_banned',
+                      'message': 'Account is banned. Cannot access account settings.',
+                      'ban_reason': _currentUser!['ban_reason'] ?? 'No reason provided',
+                    });
+                  },
+                  icon: const Icon(Icons.info_outline),
+                  label: const Text('View Ban Details'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.blue[50],
       appBar: AppBar(
