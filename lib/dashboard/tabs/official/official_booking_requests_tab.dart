@@ -369,7 +369,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 50,
+            width: 100,
             child: Text(
               '$label:',
               style: const TextStyle(
@@ -695,7 +695,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                               _buildDetailRow('Contact', contactNumber),
                               
                               // Discount tag for all users (verified and unverified)
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               FutureBuilder<Map<String, dynamic>?>(
                                 future: _getUserProfile(booking['user_email'] ?? ''),
                                 builder: (context, snapshot) {
