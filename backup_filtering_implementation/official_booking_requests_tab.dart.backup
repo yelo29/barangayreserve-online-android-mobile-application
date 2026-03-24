@@ -17,15 +17,8 @@ class OfficialBookingRequestsTab extends StatefulWidget {
 
 class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab> {
   List<Map<String, dynamic>> _pendingBookings = [];
-  List<Map<String, dynamic>> _filteredBookings = [];
   bool _isLoading = true;
-  String _selectedFacilityFilter = 'all';
-  String _selectedSubmittedDateSort = 'none';
-  String _selectedBookingDateSort = 'none';
-  String _searchQuery = '';
-  bool _showFilterMenu = false;
-  final TextEditingController _searchController = TextEditingController();
-  final Map<String, Map<String, dynamic>> _userProfiles = {};
+  Map<String, dynamic> _userProfiles = {}; // Cache user profiles
 
   String _getSafeString(dynamic value) {
     if (value == null) return 'Not provided';
@@ -186,7 +179,6 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         if (mounted) {
           setState(() {
             _pendingBookings = pendingBookings;
-            _filteredBookings = List.from(pendingBookings); // Create immutable copy
             DebugLogger.ui('Loaded ${_pendingBookings.length} pending bookings');
             _isLoading = false;
           });
@@ -199,7 +191,6 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
       if (mounted) {
         setState(() {
           _pendingBookings = [];
-          _filteredBookings = [];
           _isLoading = false;
         });
       }
@@ -402,92 +393,6 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     );
   }
 
-  // Pure function for filtering - no side effects
-  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> bookings, String facilityFilter, String submittedDateSort, String bookingDateSort, String searchQuery) {
-    // Create immutable copy to avoid data mutation
-    List<Map<String, dynamic>> filtered = List.from(bookings);
-    
-    // Apply facility filter
-    if (facilityFilter != 'all') {
-      filtered = filtered.where((booking) {
-        final facilityName = (booking['facility_name']?.toString() ?? 
-                            booking['facilityName']?.toString() ?? 
-                            'Unknown Facility').toLowerCase();
-        return facilityName == facilityFilter.toLowerCase();
-      }).toList();
-    }
-    
-    // Apply search filter (facility name, user name, and email)
-    if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
-      filtered = filtered.where((booking) {
-        final facilityName = (booking['facility_name']?.toString() ?? 
-                            booking['facilityName']?.toString() ?? 
-                            'Unknown Facility').toLowerCase();
-        final fullName = (booking['full_name']?.toString() ?? '').toLowerCase();
-        final userEmail = (booking['user_email']?.toString() ?? 'Unknown User').toLowerCase();
-        return facilityName.contains(query) || fullName.contains(query) || userEmail.contains(query);
-      }).toList();
-    }
-    
-    // Apply submitted date sorting
-    if (submittedDateSort != 'none') {
-      filtered = List.from(filtered)..sort((a, b) {
-        final dateA = a['created_at']?.toString() ?? '';
-        final dateB = b['created_at']?.toString() ?? '';
-        try {
-          final dateTimeA = DateTime.parse(dateA);
-          final dateTimeB = DateTime.parse(dateB);
-          return submittedDateSort == 'asc' 
-              ? dateTimeA.compareTo(dateTimeB)
-              : dateTimeB.compareTo(dateTimeA);
-        } catch (e) {
-          return dateA.compareTo(dateB);
-        }
-      });
-    }
-    
-    // Apply booking date sorting
-    if (bookingDateSort != 'none') {
-      filtered = List.from(filtered)..sort((a, b) {
-        final dateA = (a['booking_date']?.toString() ?? a['date']?.toString() ?? '');
-        final dateB = (b['booking_date']?.toString() ?? b['date']?.toString() ?? '');
-        try {
-          final dateTimeA = DateTime.parse(dateA);
-          final dateTimeB = DateTime.parse(dateB);
-          return bookingDateSort == 'asc' 
-              ? dateTimeA.compareTo(dateTimeB)
-              : dateTimeB.compareTo(dateTimeA);
-        } catch (e) {
-          return dateA.compareTo(dateB);
-        }
-      });
-    }
-    
-    return filtered; // Return new filtered list, never modify original
-  }
-  
-  // Safe filter update method
-  void _updateFilters() {
-    setState(() {
-      _filteredBookings = _applyFilters(_pendingBookings, _selectedFacilityFilter, _selectedSubmittedDateSort, _selectedBookingDateSort, _searchQuery);
-    });
-  }
-  
-  // Helper method to get unique facilities from bookings
-  List<String> _getUniqueFacilities(List<Map<String, dynamic>> bookings) {
-    final Set<String> facilities = {};
-    for (final booking in bookings) {
-      final facilityName = (booking['facility_name']?.toString() ?? 
-                          booking['facilityName']?.toString() ?? 
-                          'Unknown Facility');
-      facilities.add(facilityName);
-    }
-    final facilityList = facilities.toList();
-    facilityList.sort(); // Sort alphabetically
-    return facilityList;
-  }
-  
   // Refresh data method
   Future<void> _refreshData() async {
     setState(() {
@@ -585,50 +490,28 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
             ],
           ),
             const SizedBox(height: 20),
-            
-            // Filter controls
-            _buildFilterControls(),
-            const SizedBox(height: 12),
-            
-            // Content
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
-            else if (_filteredBookings.isEmpty)
-              Center(
+            else if (_pendingBookings.isEmpty)
+              const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.inbox, size: 60, color: Colors.grey),
-                    const SizedBox(height: 16),
+                    Icon(Icons.inbox, size: 60, color: Colors.grey),
+                    SizedBox(height: 16),
                     Text(
-                      _searchQuery.isNotEmpty
-                          ? "No requests match your filters"
-                          : "No pending requests",
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
+                      "No pending requests",
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
-                    if (_searchQuery.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedFacilityFilter = 'all';
-                            _selectedSubmittedDateSort = 'none';
-                            _selectedBookingDateSort = 'none';
-                            _searchQuery = '';
-                            _searchController.clear();
-                          });
-                          _updateFilters();
-                        },
-                        child: const Text('Clear Filters'),
-                      ),
                   ],
                 ),
               )
             else
               Expanded(
                 child: ListView.builder(
-                  itemCount: _filteredBookings.length,
+                  itemCount: _pendingBookings.length,
                   itemBuilder: (context, index) {
-                    final booking = _filteredBookings[index];
+                    final booking = _pendingBookings[index];
                     print('🔍 Official booking data: $booking'); // Debug logging
                     final facilityName = booking['facility_name'] ?? booking['facilityName'] ?? 'Unknown Facility';
                     final date = booking['booking_date'] ?? booking['date'] ?? '';
@@ -1005,218 +888,5 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         ],
       ],
     );
-  }
-  
-  // Safe filter UI widget
-  Widget _buildFilterControls() {
-    final uniqueFacilities = _getUniqueFacilities(_pendingBookings);
-    
-    return Container(
-      padding: const EdgeInsets.all(10),
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with hamburger menu
-          Row(
-            children: [
-              const Text(
-                'Filter Requests',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              const Spacer(),
-              // Hamburger menu icon
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showFilterMenu = !_showFilterMenu;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Icon(
-                    Icons.menu,
-                    color: Colors.blue,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          // Filter controls (expandable)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: _showFilterMenu 
-                ? _buildExpandedFilterControls(uniqueFacilities)
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // Expanded filter controls
-  Widget _buildExpandedFilterControls(List<String> uniqueFacilities) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Facility filter
-          _buildFilterDropdown(
-            'Facility',
-            _selectedFacilityFilter,
-            ['all', ...uniqueFacilities],
-            (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedFacilityFilter = value;
-                });
-                _updateFilters();
-              }
-            },
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // Date sorting row
-          Row(
-            children: [
-              Expanded(
-                child: _buildFilterDropdown(
-                  'Submitted',
-                  _selectedSubmittedDateSort,
-                  ['none', 'asc', 'desc'],
-                  (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedSubmittedDateSort = value;
-                      });
-                      _updateFilters();
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _buildFilterDropdown(
-                  'Booking',
-                  _selectedBookingDateSort,
-                  ['none', 'asc', 'desc'],
-                  (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedBookingDateSort = value;
-                      });
-                      _updateFilters();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // Search and clear row
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(fontSize: 12, color: Colors.black),
-                  decoration: const InputDecoration(
-                    labelText: 'Search facility, name, or email',
-                    labelStyle: TextStyle(fontSize: 12, color: Colors.black),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search, size: 18, color: Colors.black),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                    _updateFilters();
-                  },
-                ),
-              ),
-              const SizedBox(width: 6),
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _selectedFacilityFilter = 'all';
-                    _selectedSubmittedDateSort = 'none';
-                    _selectedBookingDateSort = 'none';
-                    _searchQuery = '';
-                    _searchController.clear();
-                  });
-                  _updateFilters();
-                },
-                icon: const Icon(Icons.clear_all, size: 16, color: Colors.black),
-                label: const Text('Clear', style: TextStyle(fontSize: 11, color: Colors.black)),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 4),
-          
-          // Results count
-          Text(
-            'Showing ${_filteredBookings.length} of ${_pendingBookings.length}',
-            style: const TextStyle(fontSize: 11, color: Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // Helper method to build filter dropdown
-  Widget _buildFilterDropdown(String label, String currentValue, List<String> options, Function(String?) onChanged) {
-    return Container(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black)),
-          const SizedBox(height: 2),
-          DropdownButton<String>(
-            value: currentValue,
-            isExpanded: true,
-            style: const TextStyle(fontSize: 12, color: Colors.black),
-            items: options.map((option) => 
-              DropdownMenuItem(
-                value: option,
-                child: Text(option, style: const TextStyle(fontSize: 12, color: Colors.black)),
-              )
-            ).toList(),
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
-  
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }

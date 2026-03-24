@@ -21,9 +21,6 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
   List<Map<String, dynamic>> _filteredRequests = [];
   bool _isLoading = true;
   String _selectedFilter = 'all';
-  String _searchQuery = '';
-  bool _showFilterMenu = false;
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -84,7 +81,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
             };
             return normalized;
           }).toList();
-          _filteredRequests = List.from(_verificationRequests); // Create immutable copy
+          _filteredRequests = _verificationRequests;
         } else {
           _verificationRequests = [];
           _filteredRequests = [];
@@ -100,43 +97,17 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
     }
   }
 
-  // Pure function for filtering - no side effects
-  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> requests, String statusFilter, String searchQuery) {
-    // Create immutable copy to avoid data mutation
-    List<Map<String, dynamic>> filtered = List.from(requests);
-    
-    // Apply status filter
-    if (statusFilter != 'all') {
-      filtered = filtered.where((request) => 
-        (request['status']?.toString().toLowerCase() ?? 'pending') == statusFilter.toLowerCase()
-      ).toList();
-    }
-    
-    // Apply search filter (name and email)
-    if (searchQuery.isNotEmpty) {
-      final query = searchQuery.toLowerCase();
-      filtered = filtered.where((request) {
-        final fullName = (request['full_name']?.toString() ?? '').toLowerCase();
-        final email = (request['email']?.toString() ?? '').toLowerCase();
-        return fullName.contains(query) || email.contains(query);
-      }).toList();
-    }
-    
-    return filtered; // Return new filtered list, never modify original
-  }
-  
-  // Safe filter update method
-  void _updateFilters() {
-    setState(() {
-      _filteredRequests = _applyFilters(_verificationRequests, _selectedFilter, _searchQuery);
-    });
-  }
-
   void _filterRequests(String filter) {
     setState(() {
       _selectedFilter = filter;
+      if (filter == 'all') {
+        _filteredRequests = _verificationRequests;
+      } else {
+        _filteredRequests = _verificationRequests
+            .where((request) => request['status'] == filter)
+            .toList();
+      }
     });
-    _updateFilters();
   }
 
   // Refresh data method
@@ -208,63 +179,6 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
 
             const SizedBox(height: 20),
 
-            // Filter Controls
-            Container(
-              padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header with hamburger menu
-                  Row(
-                    children: [
-                      const Text(
-                        'Filter Requests',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                      const Spacer(),
-                      // Hamburger menu icon
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _showFilterMenu = !_showFilterMenu;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.menu,
-                            color: Colors.blue,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // Filter controls (expandable)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: _showFilterMenu 
-                        ? _buildExpandedFilterControls()
-                        : const SizedBox.shrink(),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
             // Filter Tabs
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -299,26 +213,12 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                _searchQuery.isNotEmpty || _selectedFilter != 'all'
-                                    ? "No requests match your filters"
-                                    : "No $_selectedFilter requests",
+                                'No $_selectedFilter requests',
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              if (_searchQuery.isNotEmpty || _selectedFilter != 'all')
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _selectedFilter = 'all';
-                                      _searchQuery = '';
-                                      _searchController.clear();
-                                    });
-                                    _updateFilters();
-                                  },
-                                  child: const Text('Clear Filters'),
-                                ),
                             ],
                           ),
                         )
@@ -835,76 +735,6 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
               color: Colors.grey[600],
               fontSize: 12,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-  
-  // Expanded filter controls
-  Widget _buildExpandedFilterControls() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search field
-          TextField(
-            controller: _searchController,
-            style: const TextStyle(fontSize: 13, color: Colors.black),
-            decoration: const InputDecoration(
-              labelText: 'Search by name or email',
-              labelStyle: TextStyle(fontSize: 13, color: Colors.black),
-              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search, size: 20, color: Colors.black),
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-              _updateFilters();
-            },
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Results count and clear
-          Row(
-            children: [
-              Text(
-                'Showing ${_filteredRequests.length} of ${_verificationRequests.length}',
-                style: const TextStyle(fontSize: 12, color: Colors.black),
-              ),
-              const Spacer(),
-              if (_selectedFilter != 'all' || _searchQuery.isNotEmpty)
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedFilter = 'all';
-                      _searchQuery = '';
-                      _searchController.clear();
-                    });
-                    _updateFilters();
-                  },
-                  icon: const Icon(Icons.clear_all, size: 18, color: Colors.black),
-                  label: const Text('Clear', style: TextStyle(fontSize: 12, color: Colors.black)),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  ),
-                ),
-            ],
           ),
         ],
       ),

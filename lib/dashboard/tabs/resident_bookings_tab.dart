@@ -15,8 +15,16 @@ class ResidentBookingsTab extends StatefulWidget {
 
 class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
   List<Map<String, dynamic>> _bookings = [];
+  List<Map<String, dynamic>> _filteredBookings = [];
   bool _isLoading = true;
   String? _error;
+  String _selectedStatusFilter = 'all';
+  String _selectedFacilityFilter = 'all';
+  String _selectedSubmittedDateSort = 'none';
+  String _selectedBookingDateSort = 'none';
+  String _searchQuery = '';
+  bool _showFilterMenu = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -74,6 +82,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
         if (mounted) {
           setState(() {
             _bookings = userBookings;
+            _filteredBookings = List.from(userBookings); // Create immutable copy
             _isLoading = false;
           });
         }
@@ -84,6 +93,8 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
       print('❌ Error loading bookings: $e');
       if (mounted) {
         setState(() {
+          _bookings = [];
+          _filteredBookings = [];
           _isLoading = false;
           _error = 'Failed to load bookings: ${e.toString()}';
         });
@@ -95,16 +106,111 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
     await _loadBookings();
   }
 
+  // Pure function for filtering - no side effects
+  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> bookings, String statusFilter, String facilityFilter, String submittedDateSort, String bookingDateSort, String searchQuery) {
+    // Create immutable copy to avoid data mutation
+    List<Map<String, dynamic>> filtered = List.from(bookings);
+    
+    // Apply status filter
+    if (statusFilter != 'all') {
+      filtered = filtered.where((booking) => 
+        (booking['status']?.toString().toLowerCase() ?? 'pending') == statusFilter.toLowerCase()
+      ).toList();
+    }
+    
+    // Apply facility filter
+    if (facilityFilter != 'all') {
+      filtered = filtered.where((booking) {
+        final facilityName = (booking['facility_name']?.toString() ?? 
+                            booking['facilityName']?.toString() ?? 
+                            'Unknown Facility').toLowerCase();
+        return facilityName == facilityFilter.toLowerCase();
+      }).toList();
+    }
+    
+    // Apply search filter (facility name and user email)
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      filtered = filtered.where((booking) {
+        final facilityName = (booking['facility_name']?.toString() ?? 
+                            booking['facilityName']?.toString() ?? 
+                            'Unknown Facility').toLowerCase();
+        final userEmail = (booking['user_email']?.toString() ?? 
+                          booking['email']?.toString() ?? 
+                          'Unknown User').toLowerCase();
+        return facilityName.contains(query) || userEmail.contains(query);
+      }).toList();
+    }
+    
+    // Apply submitted date sorting
+    if (submittedDateSort != 'none') {
+      filtered = List.from(filtered)..sort((a, b) {
+        final dateA = a['created_at']?.toString() ?? '';
+        final dateB = b['created_at']?.toString() ?? '';
+        try {
+          final dateTimeA = DateTime.parse(dateA);
+          final dateTimeB = DateTime.parse(dateB);
+          return submittedDateSort == 'asc' 
+              ? dateTimeA.compareTo(dateTimeB)
+              : dateTimeB.compareTo(dateTimeA);
+        } catch (e) {
+          return dateA.compareTo(dateB);
+        }
+      });
+    }
+    
+    // Apply booking date sorting
+    if (bookingDateSort != 'none') {
+      filtered = List.from(filtered)..sort((a, b) {
+        final dateA = (a['booking_date']?.toString() ?? a['date']?.toString() ?? '');
+        final dateB = (b['booking_date']?.toString() ?? b['date']?.toString() ?? '');
+        try {
+          final dateTimeA = DateTime.parse(dateA);
+          final dateTimeB = DateTime.parse(dateB);
+          return bookingDateSort == 'asc' 
+              ? dateTimeA.compareTo(dateTimeB)
+              : dateTimeB.compareTo(dateTimeA);
+        } catch (e) {
+          return dateA.compareTo(dateB);
+        }
+      });
+    }
+    
+    return filtered; // Return new filtered list, never modify original
+  }
+  
+  // Safe filter update method
+  void _updateFilters() {
+    setState(() {
+      _filteredBookings = _applyFilters(_bookings, _selectedStatusFilter, _selectedFacilityFilter, _selectedSubmittedDateSort, _selectedBookingDateSort, _searchQuery);
+    });
+  }
+  
+  // Helper method to get unique facilities from bookings
+  List<String> _getUniqueFacilities(List<Map<String, dynamic>> bookings) {
+    final Set<String> facilities = {};
+    for (final booking in bookings) {
+      final facilityName = (booking['facility_name']?.toString() ?? 
+                          booking['facilityName']?.toString() ?? 
+                          'Unknown Facility');
+      facilities.add(facilityName);
+    }
+    final facilityList = facilities.toList();
+    facilityList.sort(); // Sort alphabetically
+    return facilityList;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
             // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.blue,
                 borderRadius: const BorderRadius.only(
@@ -135,10 +241,16 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 6),
+
+            // Filter Controls
+            _buildFilterControls(),
+            
+            const SizedBox(height: 8),
 
             // Bookings List
-            Expanded(
+            Container(
+              height: MediaQuery.of(context).size.height * 0.6,
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
@@ -181,40 +293,41 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                             ],
                           ),
                         )
-                      : _bookings.isEmpty
+                      : _filteredBookings.isEmpty
                           ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.book_online,
-                                    size: 80,
+                                    size: 60,
                                     color: Colors.grey[400],
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 12),
                                   Text(
                                     'No bookings yet',
                                     style: TextStyle(
-                                      fontSize: 18,
+                                      fontSize: 16,
                                       color: Colors.grey[600],
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
                                   Text(
                                     'Book a facility to get started',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12,
                                       color: Colors.grey[500],
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 12),
                                   ElevatedButton.icon(
                                     onPressed: _refreshBookings,
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Refresh'),
+                                    icon: const Icon(Icons.refresh, size: 16),
+                                    label: const Text('Refresh', style: TextStyle(fontSize: 12)),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
                                       foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     ),
                                   ),
                                 ],
@@ -223,10 +336,10 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                           : RefreshIndicator(
                               onRefresh: _refreshBookings,
                               child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                itemCount: _bookings.length,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                itemCount: _filteredBookings.length,
                                 itemBuilder: (context, index) {
-                                  final booking = _bookings[index];
+                                  final booking = _filteredBookings[index];
                                   return _buildBookingCard(booking);
                                 },
                               ),
@@ -235,7 +348,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
           ],
         ),
       ),
-    );
+        ), );
   }
 
   Widget _buildBookingCard(Map<String, dynamic> booking) {
@@ -604,5 +717,236 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
     
     // Default message for other rejections
     return booking['rejection_reason'] ?? 'This date has been Rejected by Officials due to fake Reciept or Wrong downpayment given.';
+  }
+  
+  // Safe filter UI widget
+  Widget _buildFilterControls() {
+    final uniqueFacilities = _getUniqueFacilities(_bookings);
+    
+    return Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with hamburger menu
+          Row(
+            children: [
+              const Text(
+                'Filter Bookings',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const Spacer(),
+              // Hamburger menu icon
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showFilterMenu = !_showFilterMenu;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Icon(
+                    Icons.menu,
+                    color: Colors.blue,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          // Filter controls (expandable)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _showFilterMenu 
+                ? _buildExpandedFilterControls(uniqueFacilities)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Expanded filter controls
+  Widget _buildExpandedFilterControls(List<String> uniqueFacilities) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status filter
+          _buildFilterDropdown(
+            'Status',
+            _selectedStatusFilter,
+            ['all', 'pending', 'approved', 'rejected'],
+            (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedStatusFilter = value;
+                });
+                _updateFilters();
+              }
+            },
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // Facility filter
+          _buildFilterDropdown(
+            'Facility',
+            _selectedFacilityFilter,
+            ['all', ...uniqueFacilities],
+            (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedFacilityFilter = value;
+                });
+                _updateFilters();
+              }
+            },
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // Date sorting row
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown(
+                  'Submitted',
+                  _selectedSubmittedDateSort,
+                  ['none', 'asc', 'desc'],
+                  (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedSubmittedDateSort = value;
+                      });
+                      _updateFilters();
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildFilterDropdown(
+                  'Booking',
+                  _selectedBookingDateSort,
+                  ['none', 'asc', 'desc'],
+                  (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedBookingDateSort = value;
+                      });
+                      _updateFilters();
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 6),
+          
+          // Search and clear row
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                  decoration: const InputDecoration(
+                    labelText: 'Search facility or email',
+                    labelStyle: TextStyle(fontSize: 12, color: Colors.black),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.search, size: 18, color: Colors.black),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                    _updateFilters();
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _selectedStatusFilter = 'all';
+                    _selectedFacilityFilter = 'all';
+                    _selectedSubmittedDateSort = 'none';
+                    _selectedBookingDateSort = 'none';
+                    _searchQuery = '';
+                    _searchController.clear();
+                  });
+                  _updateFilters();
+                },
+                icon: const Icon(Icons.clear_all, size: 16, color: Colors.black),
+                label: const Text('Clear', style: TextStyle(fontSize: 11, color: Colors.black)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 4),
+          
+          // Results count
+          Text(
+            'Showing ${_filteredBookings.length} of ${_bookings.length}',
+            style: const TextStyle(fontSize: 11, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Helper method to build filter dropdown
+  Widget _buildFilterDropdown(String label, String currentValue, List<String> options, Function(String?) onChanged) {
+    return Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black)),
+          const SizedBox(height: 2),
+          DropdownButton<String>(
+            value: currentValue,
+            isExpanded: true,
+            style: const TextStyle(fontSize: 12, color: Colors.black),
+            items: options.map((option) => 
+              DropdownMenuItem(
+                value: option,
+                child: Text(option, style: const TextStyle(fontSize: 12, color: Colors.black)),
+              )
+            ).toList(),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
