@@ -168,9 +168,16 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     _loadPendingBookings();
   }
 
-  Future<void> _loadPendingBookings() async {
+  Future<void> _loadPendingBookings({bool forceRefresh = false}) async {
     try {
       DebugLogger.ui('Loading pending bookings for official...');
+      
+      // Clear state immediately if forcing refresh
+      if (forceRefresh && mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
       
       // Use DataService for consistent data fetching
       final bookingsResponse = await DataService.fetchBookings();
@@ -198,21 +205,53 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
       DebugLogger.error('Error loading pending bookings: $e');
       if (mounted) {
         setState(() {
-          _pendingBookings = [];
-          _filteredBookings = [];
           _isLoading = false;
         });
       }
     }
   }
 
+  // Smart removal method for instant UI updates
+  void _removeBookingFromList(String bookingId) {
+    if (mounted) {
+      setState(() {
+        _pendingBookings.removeWhere((booking) => booking['id'].toString() == bookingId);
+        _filteredBookings.removeWhere((booking) => booking['id'].toString() == bookingId);
+        DebugLogger.ui('✅ Instantly removed booking $bookingId from pending list');
+      });
+    }
+  }
+
+  // Restore method for error recovery
+  void _restoreBookingToList(Map<String, dynamic> booking) {
+    if (mounted && booking.isNotEmpty) {
+      setState(() {
+        _pendingBookings.add(booking);
+        // Re-apply filters to ensure booking appears in filtered list if it matches
+        _filteredBookings = _applyFilters(_pendingBookings, _selectedFacilityFilter, _selectedSubmittedDateSort, _selectedBookingDateSort, _searchQuery);
+        DebugLogger.ui('🔄 Restored booking ${booking['id']} to pending list due to error');
+      });
+    }
+  }
+
   Future<void> _approveBooking(String bookingId) async {
+    // Store the booking data in case we need to restore it
+    final bookingToRestore = _pendingBookings.firstWhere(
+      (booking) => booking['id'].toString() == bookingId,
+      orElse: () => <String, dynamic>{},
+    );
+    
     try {
+      // Instant removal from UI for immediate feedback
+      _removeBookingFromList(bookingId);
+      
       // Use DataService to update booking status
       final result = await DataService.updateBookingStatus(int.parse(bookingId), 'approved');
       
       if (result['success']) {
-        _loadPendingBookings(); // Refresh the list
+        // Clear user profiles cache to ensure fresh data for future operations
+        _userProfiles.clear();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking approved successfully!'),
@@ -220,6 +259,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           ),
         );
       } else {
+        // Restore booking if server update failed
+        _restoreBookingToList(bookingToRestore);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Failed to approve booking'),
@@ -228,6 +270,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         );
       }
     } catch (e) {
+      // Restore booking if exception occurred
+      _restoreBookingToList(bookingToRestore);
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error approving booking: $e'),
@@ -238,6 +283,12 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
   }
 
   Future<void> _rejectBooking(String bookingId) async {
+    // Store the booking data in case we need to restore it
+    final bookingToRestore = _pendingBookings.firstWhere(
+      (booking) => booking['id'].toString() == bookingId,
+      orElse: () => <String, dynamic>{},
+    );
+    
     // Show rejection reason dialog
     final result = await showDialog<String>(
       context: context,
@@ -305,6 +356,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           rejectionReason = 'Your payment receipt is fake or shown no payment in our payment history/records, ⚠️ know that this violation will be recorded and you will only have three chances before getting your account banned!';
         }
         
+        // Instant removal from UI for immediate feedback
+        _removeBookingFromList(bookingId);
+        
         final apiResult = await DataService.updateBookingStatus(
           int.parse(bookingId), 
           'rejected', 
@@ -313,7 +367,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         );
         
         if (apiResult['success']) {
-          _loadPendingBookings(); // Refresh the list
+          // Clear user profiles cache to ensure fresh data for future operations
+          _userProfiles.clear();
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Booking rejected successfully!'),
@@ -321,6 +377,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
             ),
           );
         } else {
+          // Restore booking if server update failed
+          _restoreBookingToList(bookingToRestore);
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(apiResult['message'] ?? 'Failed to reject booking'),
@@ -329,6 +388,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           );
         }
       } catch (e) {
+        // Restore booking if exception occurred
+        _restoreBookingToList(bookingToRestore);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error rejecting booking: $e'),
@@ -496,7 +558,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     
     // Clear user profiles cache and reload data
     _userProfiles.clear();
-    await _loadPendingBookings();
+    await _loadPendingBookings(forceRefresh: true);
     
     if (mounted) {
       setState(() {
@@ -676,7 +738,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                           
                           // Refresh list if booking was updated
                           if (result == true) {
-                            _loadPendingBookings();
+                            _loadPendingBookings(forceRefresh: true);
                           }
                         },
                         borderRadius: BorderRadius.circular(12),
@@ -839,7 +901,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                       );
                                       
                                       if (result == true) {
-                                        _loadPendingBookings();
+                                        _loadPendingBookings(forceRefresh: true);
                                       }
                                     },
                                     icon: const Icon(Icons.visibility, size: 16),

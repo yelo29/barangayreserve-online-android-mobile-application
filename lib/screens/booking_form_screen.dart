@@ -1024,29 +1024,35 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               // Time Slot Selection Section
               _buildSectionHeader('Select Time Slot*', Icons.access_time),
               const SizedBox(height: 16),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_isLoadingTimeSlots)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 500),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const ClampingScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.1,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: _timeSlots.length,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Time Slot Container (takes most space)
+                  Expanded(
+                    flex: 9,
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_isLoadingTimeSlots)
+                              const Center(child: CircularProgressIndicator())
+                            else
+                              Container(
+                                constraints: const BoxConstraints(maxHeight: 600), // Increased from 500 to 600
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 1.1, // Increased from 1.1 to make buttons taller
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                                  itemCount: _timeSlots.length,
                             itemBuilder: (context, index) {
                               final timeSlot = _timeSlots[index];
                               final status = _timeSlotStatuses[timeSlot] ?? 'available';
@@ -1139,10 +1145,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                             fontWeight: _selectedTimeSlot == timeSlot
                                                 ? FontWeight.bold
                                                 : FontWeight.normal,
-                                            fontSize: 10,
+                                            fontSize: 12, // Increased from 10 to 12
                                           ),
                                           textAlign: TextAlign.center,
-                                          maxLines: 1,
+                                          maxLines: 2, // Increased from 1 to 2
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -1175,11 +1181,17 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             },
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
+                  ),
+                  
+                 
+                 
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // GCash Payment Information - Only for residents
               if (!_isOfficial) ...[
@@ -1376,7 +1388,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'Payment receipt is required to complete booking',
+                    '!Payment receipt is required to complete booking\n'
+                    '!Please upload a clear photo of your payment receipt\n'
+                    '!Before submitting your booking request, make sure to fill out personal information first',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.red.shade600,
