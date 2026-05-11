@@ -93,6 +93,7 @@ class GoogleAuthService {
     try {
       print('🔍 Signing out from Google...');
       await _googleSignIn.signOut();
+      await _googleSignIn.disconnect(); // Complete disconnect to clear cache
       _currentUser = null;
       print('✅ Google Sign-Out successful');
     } catch (e) {
@@ -199,8 +200,16 @@ class GoogleAuthService {
   // Sign-in with specific endpoint (login or register)
   static Future<Map<String, dynamic>> signInWithGoogle(String endpoint) async {
     try {
-      // Always sign out first to ensure account selection dialog appears
-      await signOut();
+      // Clear any existing session completely
+      try {
+        await _googleSignIn.signOut();
+        await _googleSignIn.disconnect();
+      } catch (e) {
+        print('⚠️ Clearing session: $e');
+      }
+      
+      // Wait a moment for cleanup
+      await Future.delayed(Duration(milliseconds: 500));
       
       // First, sign in with Google
       final signInResult = await signIn();
@@ -208,7 +217,7 @@ class GoogleAuthService {
       if (!signInResult['success']) {
         return signInResult;
       }
-
+      
       final userData = signInResult['user'];
       final idToken = userData['idToken'];
 
