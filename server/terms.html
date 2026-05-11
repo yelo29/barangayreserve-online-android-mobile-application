@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Terms of Service - Barangay Reserve</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #007bff;
@@ -24,12 +24,17 @@
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             background: #0a0f1e;
             color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
+            min-width: 320px;
+            max-width: 100vw;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body::before {
@@ -570,11 +575,57 @@
         .reveal-delay-2 { transition-delay: 0.15s; }
         .reveal-delay-3 { transition-delay: 0.22s; }
 
+        /* ─── SCROLL TO TOP BUTTON ─── */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--danger-color), var(--dark-color));
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 0, 0, 0.4);
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top::before {
+            content: '↑';
+        }
+
         @media (max-width: 768px) {
             .section { padding: 28px 22px; }
             .highlight-box { padding: 36px 24px; }
             .contact-info { padding: 28px 22px; }
             .content { padding: 44px 16px 60px; }
+            
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -653,9 +704,6 @@
                 <ul>
                     <li>Three strikes result in automatic account ban</li>
                     <li>Strike reasons include fake payment and insufficient payment</li>
-                    <li>Ban duration depends on violation severity</li>
-                    <li>Ban appeal process available through officials</li>
-                    <li>Repeated violations may result in permanent ban</li>
                 </ul>
             </div>
 
@@ -757,10 +805,9 @@
 
             <div class="section reveal reveal-delay-2">
                 <h2>Account Termination</h2>
-                <p>We may terminate or suspend your account for:</p>
+                <p>We may terminate your account for:</p>
                 <ul>
                     <li>Violation of these terms</li>
-                    <li>Extended period of inactivity</li>
                     <li>Legal or regulatory requirements</li>
                     <li>Security concerns</li>
                 </ul>
@@ -801,6 +848,7 @@
             <!-- Back Links -->
             <div class="back-link reveal">
                 <a href="index.html" class="btn btn-primary">← Back to Homepage</a>
+                <!-- <a href="presentation.html" class="btn btn-secondary">📊 View Presentation</a> -->
                 <a href="privacy.html" class="btn btn-secondary">Privacy Policy</a>
             </div>
 
@@ -812,6 +860,9 @@
         <p>&copy; 2026 Barangay Reserve. All rights reserved.</p>
     </footer>
 
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" onclick="scrollToTop()" aria-label="Scroll to top"></button>
+
     <script>
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(el => {
@@ -819,6 +870,24 @@
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Scroll to top functionality
+        const scrollButton = document.querySelector('.scroll-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollButton.classList.add('visible');
+            } else {
+                scrollButton.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     </script>
 </body>
 </html>

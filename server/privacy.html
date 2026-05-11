@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Privacy Policy - Barangay Reserve</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #007bff;
@@ -24,12 +24,17 @@
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             background: #0a0f1e;
             color: #fff;
             min-height: 100vh;
             overflow-x: hidden;
+            min-width: 320px;
+            max-width: 100vw;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body::before {
@@ -104,7 +109,7 @@
         .header-badge::before {
             content: '';
             width: 7px; height: 7px;
-            background: var(--accent-color);
+            background: var(--primary-color);
             border-radius: 50%;
             box-shadow: 0 0 8px var(--accent-color);
             animation: pulse 2s ease-in-out infinite;
@@ -490,11 +495,57 @@
         .reveal-delay-2 { transition-delay: 0.15s; }
         .reveal-delay-3 { transition-delay: 0.22s; }
 
+        /* ─── SCROLL TO TOP BUTTON ─── */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top::before {
+            content: '↑';
+        }
+
         @media (max-width: 768px) {
             .section { padding: 28px 22px; }
             .highlight-box { padding: 36px 24px; }
             .contact-info { padding: 28px 22px; }
             .content { padding: 44px 16px 60px; }
+            
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -561,9 +612,6 @@
                 <p>You have the right to:</p>
                 <ul>
                     <li>Access and update your personal information</li>
-                    <li>Delete your account and associated data</li>
-                    <li>Opt-out of non-essential communications</li>
-                    <li>Request data export</li>
                 </ul>
             </div>
 
@@ -571,9 +619,6 @@
                 <h2>Google Authentication</h2>
                 <p>We use Google Sign-In for authentication purposes. When you use Google Sign-In, we receive:</p>
                 <ul>
-                    <li><strong>Email Address:</strong> For account creation and login identification</li>
-                    <li><strong>Basic Profile:</strong> Name and profile picture for account setup</li>
-                    <li><strong>Account Selection:</strong> Forced account choice on each authentication attempt</li>
                     <li><strong>Login/Register Separation:</strong> Distinct flows for existing vs new users</li>
                     <li><strong>Profile Configuration:</strong> Additional setup required for new users</li>
                 </ul>
@@ -620,16 +665,10 @@
                 <p>In addition to basic rights, you have the right to:</p>
                 <ul>
                     <li><strong>Verification Control:</strong> Manage verification status and document uploads</li>
-                    <li><strong>Ban Appeal:</strong> Request review of ban status and violation history</li>
                     <li><strong>Auto-Fill Management:</strong> Control automatic data population settings</li>
-                    <li><strong>Profile Photo Control:</strong> Update or remove profile pictures</li>
-                    <li><strong>Booking History:</strong> Access complete booking and payment records</li>
+                    <li><strong>Profile Photo Control:</strong> Update or replace profile pictures</li>
+                    <li><strong>Booking History:</strong> Access complete booking records</li>
                 </ul>
-            </div>
-
-            <div class="section reveal reveal-delay-2">
-                <h2>Cookies and Tracking</h2>
-                <p>We use cookies to maintain your session and preferences. You can disable cookies in your browser settings, but this may affect functionality.</p>
             </div>
 
             <div class="section reveal reveal-delay-1">
@@ -671,6 +710,7 @@
             <!-- Back Links -->
             <div class="back-link reveal">
                 <a href="index.html" class="btn btn-primary">← Back to Homepage</a>
+                <!--<a href="presentation.html" class="btn btn-secondary">📊 View Presentation</a> -->
                 <a href="terms.html" class="btn btn-secondary">Terms of Service</a>
             </div>
 
@@ -682,6 +722,9 @@
         <p>&copy; 2026 Barangay Reserve. All rights reserved.</p>
     </footer>
 
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" onclick="scrollToTop()" aria-label="Scroll to top"></button>
+
     <script>
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(el => {
@@ -690,6 +733,24 @@
         }, { threshold: 0.1 });
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Scroll to top functionality
+        const scrollButton = document.querySelector('.scroll-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollButton.classList.add('visible');
+            } else {
+                scrollButton.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     </script>
 </body>
 </html>
