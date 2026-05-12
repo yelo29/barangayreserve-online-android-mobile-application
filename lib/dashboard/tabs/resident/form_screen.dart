@@ -10,6 +10,7 @@ import '../../../services/base64_image_service.dart';
 import '../../../models/facility_model.dart';
 import '../../../config/app_config.dart';
 import '../../../widgets/booking_conflict_detector.dart';
+import '../../../utils/debug_logger.dart';
 
 class FormScreen extends StatefulWidget {
   final String facilityName;
@@ -68,7 +69,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
   void initState() {
     super.initState();
     DebugLogger.ui('ResidentBookingFormScreen initialized');
-    print('🔍 QR Code: Form screen initialized - QR code should be visible');
+    DebugLogger.ui('Form screen initialized - QR code visible');
     
     // Initialize auto-refresh for booking form
     initAutoRefresh('booking_form');
@@ -103,7 +104,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
     try {
       final authApiService = AuthApiService.instance;
       final currentUser = authApiService.currentUser;
-      print('🔍 Current user from server: $currentUser');
+      DebugLogger.api('Current user from server: $currentUser');
       
       if (currentUser != null) {
         setState(() {
@@ -113,7 +114,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
         });
       }
     } catch (e) {
-      print('🔥 Error initializing form: $e');
+      DebugLogger.error('Error initializing form', error: e);
     }
   }
 
@@ -134,23 +135,23 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       );
 
       if (pickedFile != null) {
-        print('🔍 DEBUG: Image picked - path: ${pickedFile.path}');
+        DebugLogger.ui('Image picked - path: ${pickedFile.path}');
         try {
           final file = File(pickedFile.path);
           if (await file.exists()) {
             setState(() {
               _receiptImage = file;
             });
-            print('✅ DEBUG: Receipt image file created successfully');
+            DebugLogger.success('Receipt image file created successfully');
           } else {
-            print('❌ DEBUG: Image file does not exist at path: ${pickedFile.path}');
+            DebugLogger.warning('Image file does not exist at path: ${pickedFile.path}');
           }
         } catch (e) {
-          print('❌ DEBUG: Error creating File from XFile: $e');
+          DebugLogger.error('Error creating File from XFile', error: e);
         }
       }
     } catch (e) {
-      print('❌ Error uploading images: $e');
+      DebugLogger.error('Error uploading images', error: e);
       setState(() {
         _errorMessage = 'Failed to pick image: $e';
       });
@@ -162,12 +163,11 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       final authApiService = AuthApiService.instance;
       final currentUser = authApiService.currentUser;
       if (currentUser == null) {
-        print('❌ No user logged in - cannot upload receipt');
+        DebugLogger.warning('No user logged in - cannot upload receipt');
         return null;
       }
 
-      print('🌤️ Starting receipt upload for user: ${currentUser['email']}');
-      print('🌤️ Image file path: ${imageFile.path}');
+      DebugLogger.api('Starting receipt upload for user: ${currentUser['email']}');
 
       // Upload receipt as Base64 to Firestore (FREE method)
       final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -178,15 +178,14 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       );
       
       if (receiptBase64 != null) {
-        print('✅ Receipt converted to base64 successfully');
-        print('📊 Base64 size: ${(receiptBase64.length / 1024).toStringAsFixed(2)} KB');
+        DebugLogger.success('Receipt converted to base64 successfully (${(receiptBase64.length / 1024).toStringAsFixed(2)} KB)');
         return receiptBase64;
       } else {
-        print('❌ Receipt base64 conversion failed');
+        DebugLogger.warning('Receipt base64 conversion failed');
         return null;
       }
     } catch (e) {
-      print('🌤️ Receipt upload error: $e');
+      DebugLogger.error('Receipt upload error', error: e);
       return null;
     }
   }
@@ -323,35 +322,34 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
 
   Future<void> _submitBooking() async {
     try {
-      print('🔍 DEBUG: Submit button clicked');
-      print('🔍 DEBUG: Selected timeslot: $_selectedTimeslot');
+      DebugLogger.ui('Submit button clicked, timeslot: $_selectedTimeslot');
       
       if (!_formKey.currentState!.validate()) {
-        print('🔍 DEBUG: Form validation failed');
+        DebugLogger.warning('Form validation failed');
         return;
       }
 
-      print('🔍 DEBUG: Form validation passed');
+      DebugLogger.success('Form validation passed');
 
       if (_selectedTimeslot == null) {
-        print('🔍 DEBUG: No timeslot selected - showing error');
+        DebugLogger.warning('No timeslot selected - showing error');
         setState(() {
           _errorMessage = 'Please select a timeslot';
         });
         return;
       }
 
-      print('🔍 DEBUG: Timeslot validation passed');
+      DebugLogger.success('Timeslot validation passed');
 
       if (_receiptImage == null) {
-        print('🔍 DEBUG: No receipt uploaded - showing error');
+        DebugLogger.warning('No receipt uploaded - showing error');
         setState(() {
           _errorMessage = 'Please upload a payment receipt';
         });
         return;
       }
 
-      print('🔍 DEBUG: Receipt validation passed - proceeding to availability check');
+      DebugLogger.success('Receipt validation passed - proceeding to availability check');
 
       setState(() {
         _isLoading = true;
@@ -359,15 +357,14 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       });
 
       try {
-        print('🔍 Checking time slot availability...');
-        print('🔍 DEBUG: About to call _checkTimeSlotAvailability()');
+        DebugLogger.api('Checking time slot availability');
         
         // First check if the time slot is available
         final availabilityResult = await _checkTimeSlotAvailability();
-        print('🔍 DEBUG: _checkTimeSlotAvailability() returned: $availabilityResult');
+        DebugLogger.api('Time slot availability result: $availabilityResult');
         
         if (!availabilityResult['available']) {
-          print('🔍 DEBUG: Time slot not available - showing error');
+          DebugLogger.warning('Time slot not available - showing error');
           setState(() {
             _errorMessage = availabilityResult['message'];
             _isLoading = false;
@@ -375,7 +372,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
           return;
         }
         
-        print('🔍 DEBUG: Time slot is available - proceeding');
+        DebugLogger.success('Time slot is available - proceeding');
       
       // Show competitive booking warning if applicable
       if (availabilityResult['is_competitive'] == true) {
@@ -388,7 +385,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
         }
       }
       
-      print('✅ Time slot is available, submitting booking...');
+      DebugLogger.success('Time slot available, submitting booking');
       
       // Upload receipt first if available
       String? receiptImageUrl;
@@ -408,9 +405,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       };
 
       // Submit booking via Server API
-      print('🔍 DEBUG: About to submit booking with receipt data');
-      print('🔍 DEBUG: receiptImageUrl: $receiptImageUrl');
-      print('🔍 DEBUG: receiptImageUrl length: ${receiptImageUrl?.length ?? 0}');
+      DebugLogger.api('Submitting booking with receipt data (length: ${receiptImageUrl?.length ?? 0})');
       
       final result = await ApiService.createBooking({
         'facility_id': widget.facilityId,
@@ -429,10 +424,10 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
         'updated_at': DateTime.now().toIso8601String(),
       });
       
-      print('🔍 DEBUG: Booking submission result: $result');
+      DebugLogger.api('Booking submission result: ${result['success'] ? 'success' : 'failed'}');
 
       if (result['success']) {
-        print('✅ Booking submitted successfully!');
+        DebugLogger.success('Booking submitted successfully');
         
         // Show success message with competitive booking info
         if (mounted) {
@@ -471,7 +466,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
         });
       }
     } catch (e) {
-      print('❌ Booking submission error: $e');
+      DebugLogger.error('Booking submission error', error: e);
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to submit booking: $e';
@@ -480,8 +475,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       }
     }
     } catch (e) {
-      print('❌ CRITICAL ERROR in _submitBooking: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      DebugLogger.error('CRITICAL ERROR in _submitBooking', error: e, stackTrace: StackTrace.current);
       if (mounted) {
         setState(() {
           _errorMessage = 'Critical error: $e';
@@ -493,16 +487,14 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
 
   Future<Map<String, dynamic>> _checkTimeSlotAvailability() async {
     try {
-      print('🔍 DEBUG: Checking availability for facility ${widget.facilityId}, date ${widget.selectedDate}, user ${currentUser['email']}');
-      print('🔍 DEBUG: Selected timeslot: $_selectedTimeslot');
+      DebugLogger.api('Checking availability for facility ${widget.facilityId}, date ${widget.selectedDate}, timeslot $_selectedTimeslot');
       
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/api/available-timeslots?facility_id=${widget.facilityId}&date=${widget.selectedDate}&user_email=${currentUser['email']}'),
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('🔍 DEBUG: Response status: ${response.statusCode}');
-      print('🔍 DEBUG: Response body: ${response.body}');
+      DebugLogger.api('Availability response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -512,27 +504,23 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
           final competitiveSlots = List<String>.from(data['competitive_timeslots']);
           final approvedSlots = List<String>.from(data['approved_timeslots']);
           
-          print('🔍 DEBUG: Available slots: $availableSlots');
-          print('🔍 DEBUG: User booked slots: $userBookedSlots');
-          print('🔍 DEBUG: Competitive slots: $competitiveSlots');
-          print('🔍 DEBUG: Approved slots: $approvedSlots');
-          print('🔍 DEBUG: Selected timeslot: $_selectedTimeslot');
+          DebugLogger.api('Available slots: ${availableSlots.length}, User booked: ${userBookedSlots.length}, Competitive: ${competitiveSlots.length}');
           
           // Check if the selected time slot is available for booking
           if (userBookedSlots.contains(_selectedTimeslot)) {
-            print('🔍 DEBUG: User already booked this slot');
+            DebugLogger.warning('User already booked this slot');
             return {
               'available': false,
               'message': 'You already have a booking for this time slot. Please choose a different time.'
             };
           } else if (approvedSlots.contains(_selectedTimeslot)) {
-            print('🔍 DEBUG: Slot is already approved/taken');
+            DebugLogger.warning('Slot is already approved/taken');
             return {
               'available': false,
               'message': 'This time slot is already taken. Please choose a different time.'
             };
           } else if (competitiveSlots.contains(_selectedTimeslot)) {
-            print('🔍 DEBUG: Slot is competitive');
+            DebugLogger.api('Slot is competitive - allowing competitive booking');
             // Allow competitive booking
             return {
               'available': true,
@@ -540,14 +528,14 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
               'is_competitive': true
             };
           } else if (availableSlots.contains(_selectedTimeslot)) {
-            print('🔍 DEBUG: Slot is available');
+            DebugLogger.success('Slot is available');
             return {
               'available': true,
               'message': 'Time slot is available',
               'is_competitive': false
             };
           } else {
-            print('🔍 DEBUG: Slot is not available for unknown reason');
+            DebugLogger.warning('Slot is not available for unknown reason');
             return {
               'available': false,
               'message': 'This time slot is not available. Please choose a different time.'
@@ -558,7 +546,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
       
       return {'available': false, 'message': 'Could not verify time slot availability'};
     } catch (e) {
-      print('❌ Error checking availability: $e');
+      DebugLogger.error('Error checking availability', error: e);
       return {'available': false, 'message': 'Error checking availability: $e'};
     }
   }
@@ -799,7 +787,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: InkWell(
                           onTap: () {
-                            print('🔍 DEBUG: User selected timeslot: $timeslot');
+                            DebugLogger.ui('User selected timeslot: $timeslot');
                             setState(() {
                               _selectedTimeslot = timeslot;
                             });
@@ -874,7 +862,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
                         // QR Code Container - Now Tappable
                         GestureDetector(
                           onTap: () {
-                            print('🔍 QR Code: QR code tapped!');
+                            DebugLogger.ui('QR code tapped - launching GCash payment');
                             _launchGCashPayment();
                           },
                           child: Container(
@@ -908,7 +896,7 @@ class _FormScreenState extends State<FormScreen> with AutoRefreshMixin {
                                       'assets/images/qr_codes/qr-code-merchant-image.jpg',
                                       fit: BoxFit.cover,
                                       errorBuilder: (context, error, stackTrace) {
-                                        print('❌ QR Code image load error: $error');
+                                        DebugLogger.warning('QR Code image load error: $error');
                                         return const Icon(
                                           Icons.qr_code_2,
                                           size: 40,

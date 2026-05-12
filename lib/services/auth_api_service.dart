@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'data_service.dart';
 import 'persistent_auth_service.dart';
+import '../utils/debug_logger.dart';
 
 class AuthApiService {
   static AuthApiService? _instance;
@@ -26,12 +27,12 @@ class AuthApiService {
     if (_isInitialized) return;
     
     try {
-      print('🔍 Initializing user session...');
+      DebugLogger.api('Initializing user session');
       await restoreUserFromToken();
       _isInitialized = true;
-      print('🔍 User session initialized');
+      DebugLogger.success('User session initialized');
     } catch (e) {
-      print('❌ Error initializing user session: $e');
+      DebugLogger.error('Error initializing user session', error: e);
       _isInitialized = true; // Prevent infinite retry
     }
   }
@@ -65,7 +66,7 @@ class AuthApiService {
     {String role = 'resident'}
   ) async {
     try {
-      print('🔍 Registering user: $email');
+      DebugLogger.api('Registering user: $email');
       
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/api/auth/register'),
@@ -78,8 +79,7 @@ class AuthApiService {
         }),
       );
 
-      print('🔍 Registration response status: ${response.statusCode}');
-      print('🔍 Registration response body: ${response.body}');
+      DebugLogger.api('Registration response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -97,7 +97,7 @@ class AuthApiService {
             // Save auth token
             if (data['token'] != null) {
               await prefs.setString('auth_token', data['token']);
-              print('🔍 Saved auth token during registration');
+              DebugLogger.success('Auth token saved during registration');
             }
             
             // Save user data
@@ -112,9 +112,9 @@ class AuthApiService {
             await prefs.setString('user_created_at', _currentUser!['created_at'] ?? '');
             await prefs.setInt('user_id', _currentUser!['id'] ?? 0);
             
-            print('🔍 Saved user session during registration');
+            DebugLogger.success('User session saved during registration');
           } catch (e) {
-            print('❌ AuthApiService SharedPreferences error during registration: $e');
+            DebugLogger.error('SharedPreferences error during registration', error: e);
           }
           
           return data;
@@ -131,7 +131,7 @@ class AuthApiService {
         }
       }
     } catch (e) {
-      print('❌ Registration exception: $e');
+      DebugLogger.error('Registration exception', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -143,20 +143,17 @@ class AuthApiService {
     {String role = 'resident'}
   ) async {
     try {
-      print('🔍 Login attempt for email: $email');
+      DebugLogger.api('Login attempt for email: $email');
       
       final result = await ApiService.login(email, password);
       
       if (result['success'] == true) {
-        print('🔍 AuthApiService: Processing successful login...');
+        DebugLogger.success('Processing successful login');
         
         // Convert integer booleans to actual booleans and handle verification types
         Map<String, dynamic> user = Map<String, dynamic>.from(result['user']);
         
-        print('🔍 AuthApiService: Converting boolean fields...');
-        print('🔍 AuthApiService: verified = ${user['verified']} (${user['verified'].runtimeType})');
-        print('🔍 AuthApiService: email_verified = ${user['email_verified']} (${user['email_verified'].runtimeType})');
-        print('🔍 AuthApiService: is_active = ${user['is_active']} (${user['is_active'].runtimeType})');
+        DebugLogger.api('Converting boolean fields for user');
         
         // Handle verification status properly - support both int and bool types
         dynamic verifiedStatus = user['verified'];
@@ -202,7 +199,7 @@ class AuthApiService {
         user['email_verified'] = user['email_verified'] == 1 || user['email_verified'] == true;
         user['is_active'] = user['is_active'] == 1 || user['is_active'] == true;
         
-        print('🔍 AuthApiService: Boolean conversion completed');
+        DebugLogger.success('Boolean conversion completed');
         
         _currentUser = user;
         
@@ -224,26 +221,25 @@ class AuthApiService {
           // Save profile photo to SharedPreferences
           if (user['profile_photo_url'] != null && user['profile_photo_url'].toString().isNotEmpty) {
             await prefs.setString('user_profile_photo_url', user['profile_photo_url'].toString());
-            print('🔍 Saved profile photo to SharedPreferences during login: ${user['profile_photo_url']}');
+            DebugLogger.api('Profile photo saved to SharedPreferences');
           }
         } catch (e) {
-          print('❌ AuthApiService SharedPreferences error: $e');
-          print('❌ User data: $user');
+          DebugLogger.error('SharedPreferences error during login', error: e);
           throw e;
         }
         
-        print('✅ Login successful');
+        DebugLogger.success('Login successful');
         
         // Save login state using PersistentAuthService
         await PersistentAuthService.saveLoginState(user, result['token'] ?? '');
         
         return {'success': true, 'user': user, 'token': result['token']};
       } else {
-        print('❌ Login failed: ${result['message']}');
+        DebugLogger.warning('Login failed: ${result['message']}');
         return result;
       }
     } catch (e) {
-      print('❌ Login exception: $e');
+      DebugLogger.error('Login exception', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -251,13 +247,13 @@ class AuthApiService {
   // Restore user from token
   Future<Map<String, dynamic>?> restoreUserFromToken() async {
     try {
-      print('🔍 Restoring user from token...');
+      DebugLogger.api('Restoring user from token');
       
       final prefs = await SharedPreferences.getInstance();
       final userDataString = prefs.getString('user_data'); // Use same key as PersistentAuthService
       
       if (userDataString == null) {
-        print('❌ No user data found in storage');
+        DebugLogger.warning('No user data found in storage');
         _currentUser = null;
         return null;
       }
@@ -266,7 +262,7 @@ class AuthApiService {
       final userEmail = userData['email'];
       
       if (userEmail == null) {
-        print('❌ No user email found in stored data');
+        DebugLogger.warning('No user email found in stored data');
         _currentUser = null;
         return null;
       }
@@ -326,25 +322,25 @@ class AuthApiService {
         // CRITICAL: Clear verification status cache to prevent data isolation leaks
         await clearVerificationStatus();
         
-        print('✅ User restored successfully');
+        DebugLogger.success('User restored successfully');
         
         // Load profile photo from SharedPreferences as fallback
         final profilePhotoUrl = prefs.getString('user_profile_photo_url');
         if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
           _currentUser!['profile_photo_url'] = profilePhotoUrl;
-          print('🔍 Loaded profile photo from SharedPreferences during restore: $profilePhotoUrl');
+          DebugLogger.api('Profile photo loaded from SharedPreferences during restore');
         }
         
         // Note: Ban checking removed - user will implement new approach
         
         return _currentUser;
       } else {
-        print('❌ Failed to restore user: ${result['error']}');
+        DebugLogger.warning('Failed to restore user: ${result['error']}');
         _currentUser = null;
         return null;
       }
     } catch (e) {
-      print('❌ Restore user exception: $e');
+      DebugLogger.error('Restore user exception', error: e);
       _currentUser = null;
       return null;
     }
@@ -449,7 +445,7 @@ class AuthApiService {
       
       return null;
     } catch (e) {
-      print('❌ Get user profile exception: $e');
+      DebugLogger.error('Get user profile exception', error: e);
       return null;
     }
   }
@@ -487,7 +483,7 @@ class AuthApiService {
         }
       }
     } catch (e) {
-      print('❌ Update user profile exception: $e');
+      DebugLogger.error('Update user profile exception', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -495,7 +491,7 @@ class AuthApiService {
   // Logout user
   Future<Map<String, dynamic>> signOut() async {
     try {
-      print('🔍 Signing out user...');
+      DebugLogger.api('Signing out user');
       
       // Clear persistent login state
       await PersistentAuthService.clearLoginState();
@@ -504,10 +500,10 @@ class AuthApiService {
       _currentUser = null;
       _isInitialized = false;
       
-      print('✅ User signed out successfully');
+      DebugLogger.success('User signed out successfully');
       return {'success': true};
     } catch (e) {
-      print('❌ Sign out exception: $e');
+      DebugLogger.error('Sign out exception', error: e);
       // Still clear local data even if network fails
       _currentUser = null;
       _isInitialized = false;
@@ -545,15 +541,15 @@ class AuthApiService {
           if (verifiedStatus is bool) {
             // Keep server's verification_type exactly as provided
             processedUser['verified'] = verifiedStatus;
-            print('🔍 Server returned boolean verified: $verifiedStatus, keeping verification_type: ${processedUser['verification_type']}');
+            DebugLogger.api('Server returned boolean verified: $verifiedStatus, verification_type: ${processedUser['verification_type']}');
           } else if (verifiedStatus is int) {
             // Convert integer to boolean but keep server's verification_type
             processedUser['verified'] = verifiedStatus > 0;
-            print('🔍 Server returned integer verified: $verifiedStatus -> ${verifiedStatus > 0}, keeping verification_type: ${processedUser['verification_type']}');
+            DebugLogger.api('Server returned integer verified: $verifiedStatus -> ${verifiedStatus > 0}, verification_type: ${processedUser['verification_type']}');
           } else {
             // Fallback - set to false but don't change verification_type
             processedUser['verified'] = false;
-            print('🔍 Unknown verified type: $verifiedStatus, setting to false, keeping verification_type: ${processedUser['verification_type']}');
+            DebugLogger.warning('Unknown verified type: $verifiedStatus, setting to false, verification_type: ${processedUser['verification_type']}');
           }
           
           processedUser['email_verified'] = processedUser['email_verified'] == 1 || processedUser['email_verified'] == true;
@@ -567,12 +563,7 @@ class AuthApiService {
             _currentUser = processedUser;
           }
           
-          print('🔍 Verification status after merge:');
-          print('  - verified: ${_currentUser!['verified']} (${_currentUser!['verified'].runtimeType})');
-          print('  - verification_type: ${_currentUser!['verification_type']}');
-          print('  - isVerifiedResident(): ${isVerifiedResident()}');
-          print('  - isVerifiedNonResident(): ${isVerifiedNonResident()}');
-          print('  - isUserVerified(): ${isUserVerified()}');
+          DebugLogger.api('Verification status after merge: verified=${_currentUser!['verified']}, verification_type=${_currentUser!['verification_type']}');
           
           // Update SharedPreferences with fresh data
           final prefs = await SharedPreferences.getInstance();
@@ -587,22 +578,22 @@ class AuthApiService {
           if (serverProfilePhoto.isNotEmpty) {
             // Server has profile photo, use it
             await prefs.setString('user_profile_photo_url', serverProfilePhoto);
-            print('🔍 Updated profile photo from server: $serverProfilePhoto');
+            DebugLogger.api('Profile photo updated from server');
           } else if (existingProfilePhoto != null && existingProfilePhoto.isNotEmpty) {
             // Server has empty profile photo, preserve existing one
             await prefs.setString('user_profile_photo_url', existingProfilePhoto);
-            print('🔍 Preserved existing profile photo: $existingProfilePhoto');
+            DebugLogger.api('Existing profile photo preserved');
             // Update current user with preserved photo
             _currentUser!['profile_photo_url'] = existingProfilePhoto;
           }
           
-          print('🔍 User data refreshed from server');
+          DebugLogger.success('User data refreshed from server');
           return processedUser;
         }
       }
       return null;
     } catch (e) {
-      print('❌ Error refreshing user data: $e');
+      DebugLogger.error('Error refreshing user data', error: e);
       return null;
     }
   }
@@ -613,9 +604,9 @@ class AuthApiService {
       await ApiService.clearUserData();
       _currentUser = null;
       _isInitialized = false;
-      print('🔍 Cleared all user data');
+      DebugLogger.api('Cleared all user data');
     } catch (e) {
-      print('❌ Clear user data exception: $e');
+      DebugLogger.error('Clear user data exception', error: e);
     }
   }
 
@@ -636,7 +627,7 @@ class AuthApiService {
         final userData = jsonDecode(userDataString);
         return userData['email'];
       } catch (e) {
-        print('❌ AuthApiService: Error parsing user_data JSON: $e');
+        DebugLogger.error('Error parsing user_data JSON', error: e);
       }
     }
     
@@ -653,17 +644,9 @@ class AuthApiService {
   // Debug method to print current user info
   void debugPrintCurrentUser() {
     if (_currentUser != null) {
-      print('🔍 Current User Debug Info:');
-      print('  ID: ${getUserId()}');
-      print('  Email: ${getUserEmail()}');
-      print('  Name: ${getUserName()}');
-      print('  Role: ${getUserRole()}');
-      print('  Verified: ${isUserVerified()}');
-      print('  Discount Rate: ${getUserDiscountRate()}');
-      print('  Is Official: ${isOfficial()}');
-      print('  Is Resident: ${isResident()}');
+      DebugLogger.api('Current User: ID=${getUserId()}, Email=${getUserEmail()}, Name=${getUserName()}, Role=${getUserRole()}, Verified=${isUserVerified()}');
     } else {
-      print('🔍 No current user logged in');
+      DebugLogger.api('No current user logged in');
     }
   }
 
@@ -687,7 +670,7 @@ class AuthApiService {
       }
       if (userData['profile_photo_url'] != null) {
         await prefs.setString('user_profile_photo_url', userData['profile_photo_url']);
-        print('🔍 Saved profile photo to SharedPreferences: ${userData['profile_photo_url']}');
+        DebugLogger.api('Profile photo saved to SharedPreferences');
       }
       
       // Update current user object
@@ -695,9 +678,9 @@ class AuthApiService {
         _currentUser = {...?_currentUser, ...userData};
       }
       
-      print('✅ User data updated successfully');
+      DebugLogger.success('User data updated successfully');
     } catch (e) {
-      print('❌ Error updating user data: $e');
+      DebugLogger.error('Error updating user data', error: e);
     }
   }
 
@@ -718,7 +701,7 @@ class AuthApiService {
       // Prioritize SharedPreferences (most recent manual update)
       final profilePhotoUrl = _currentUser!['profile_photo_url']?.toString() ?? '';
       if (profilePhotoUrl.isNotEmpty) {
-        print('🔍 getUserProfilePhoto: Using current user photo: $profilePhotoUrl');
+        DebugLogger.api('Using current user profile photo: $profilePhotoUrl');
         return profilePhotoUrl;
       }
     }
@@ -733,11 +716,7 @@ class AuthApiService {
       // Must be verified AND specifically resident verification type (not verified_non_resident)
       final result = verified && verificationType && _currentUser!['verification_type'] != 'verified_non_resident';
       
-      print('🔍 isVerifiedResident() debug:');
-      print('  - verified: $verified');
-      print('  - verification_type: ${_currentUser!['verification_type']} (resident: $verificationType)');
-      print('  - discount_rate: ${_currentUser!['discount_rate']} (0.1: $discountRate)');
-      print('  - final result: $result');
+      DebugLogger.api('isVerifiedResident: verified=$verified, verification_type=${_currentUser!['verification_type']}, result=$result');
       
       return result;
     }
@@ -753,11 +732,7 @@ class AuthApiService {
       // Must be verified AND specifically non-resident verification type
       final result = verified && verificationType;
       
-      print('🔍 isVerifiedNonResident() debug:');
-      print('  - verified: $verified');
-      print('  - verification_type: ${_currentUser!['verification_type']} (non-resident: $verificationType)');
-      print('  - discount_rate: ${_currentUser!['discount_rate']} (0.05: $discountRate)');
-      print('  - final result: $result');
+      DebugLogger.api('isVerifiedNonResident: verified=$verified, verification_type=${_currentUser!['verification_type']}, discount_rate=${_currentUser!['discount_rate']} (0.05: $discountRate), result=$result');
       
       return result;
     }

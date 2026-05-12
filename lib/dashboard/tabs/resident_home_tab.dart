@@ -4,6 +4,8 @@ import '../../../services/data_service.dart';
 import '../../../services/auth_api_service.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/loading_widget.dart';
+import '../../../widgets/facility_icon.dart';
+import '../../../widgets/base64_image_widget.dart';
 import '../../../utils/debug_logger.dart';
 import '../../../screens/facility_calendar_screen.dart';
 import '../../../screens/booking_form_screen.dart';
@@ -421,24 +423,20 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
+                    GestureDetector(
+                      onTap: () => _showFacilityImagePreview(facility['main_photo_url'] ?? 'location_city'),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: FacilityIcon(
+                          iconName: facility['main_photo_url'] ?? 'location_city',
+                          size: 48,
+                          color: Colors.blue[600],
+                        ),
                       ),
-                      child: facility['main_photo_url'] != null && facility['main_photo_url'].isNotEmpty
-                          ? Text(
-                              facility['main_photo_url'],
-                              style: const TextStyle(
-                                fontSize: 28,
-                              ),
-                            )
-                          : Icon(
-                              Icons.location_city,
-                              color: Colors.blue[600],
-                              size: 28,
-                            ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -624,6 +622,70 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
         _loadFacilities();
       }
     });
+  }
+
+  void _showFacilityImagePreview(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Facility Image',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                // Image content
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: imageUrl.startsWith('data:image') || (imageUrl.length > 100 && !imageUrl.contains(' '))
+                        ? Base64ImageWidget(
+                            base64Data: imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                          )
+                        : Center(
+                            child: Text(
+                              imageUrl,
+                              style: const TextStyle(fontSize: 80),
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Verification helper methods

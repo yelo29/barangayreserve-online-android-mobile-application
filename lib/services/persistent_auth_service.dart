@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../utils/debug_logger.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 
@@ -14,7 +15,7 @@ class PersistentAuthService {
   // Save login state with device binding
   static Future<void> saveLoginState(Map<String, dynamic> userData, String token) async {
     try {
-      print('🔐 PersistentAuth: Saving login state...');
+      DebugLogger.api('Saving login state...');
       
       final prefs = await SharedPreferences.getInstance();
       final deviceInfo = await DeviceInfoPlugin().androidInfo;
@@ -26,10 +27,10 @@ class PersistentAuthService {
       await prefs.setBool(_isLoggedInKey, true);
       await prefs.setString(_loginTimeKey, DateTime.now().toIso8601String());
       
-      print('✅ PersistentAuth: Login state saved for device: ${deviceInfo.id}');
-      print('✅ PersistentAuth: User: ${userData['email']}');
+      DebugLogger.success('Login state saved for device: ${deviceInfo.id}');
+      DebugLogger.success('User logged in: ${userData['email']}');
     } catch (e) {
-      print('❌ PersistentAuth: Error saving login state: $e');
+      DebugLogger.error('Error saving login state', error: e);
     }
   }
   
@@ -45,19 +46,19 @@ class PersistentAuthService {
         
         // Verify this is the same device
         if (savedDeviceId == deviceInfo.id) {
-          print('✅ PersistentAuth: User is logged in on same device');
+          DebugLogger.success('User is logged in on same device');
           return true;
         } else {
-          print('⚠️ PersistentAuth: Different device detected, requiring re-login');
+          DebugLogger.warning('Different device detected, requiring re-login', tag: 'PersistentAuth');
           await clearLoginState();
           return false;
         }
       }
       
-      print('🔍 PersistentAuth: User not logged in');
+      DebugLogger.api('User not logged in');
       return false;
     } catch (e) {
-      print('❌ PersistentAuth: Error checking login state: $e');
+      DebugLogger.error('Error checking login state', error: e);
       return false;
     }
   }
@@ -69,7 +70,7 @@ class PersistentAuthService {
       final isLoggedIn = prefs.getBool(_isLoggedInKey) ?? false;
       
       if (!isLoggedIn) {
-        print('🔍 PersistentAuth: No user logged in');
+        DebugLogger.api('No user logged in');
         return null;
       }
       
@@ -78,7 +79,7 @@ class PersistentAuthService {
       
       // Verify this is the same device
       if (savedDeviceId != deviceInfo.id) {
-        print('⚠️ PersistentAuth: Different device, clearing data');
+        DebugLogger.log('Different device, clearing data', tag: 'PersistentAuth');
         await clearLoginState();
         return null;
       }
@@ -103,26 +104,26 @@ class PersistentAuthService {
             if (response.statusCode == 200) {
               final userStatus = json.decode(response.body);
               if (userStatus['is_banned'] == true) {
-                print('🚨 PersistentAuth: User is banned - clearing login state');
-                print('🚨 Ban reason: ${userStatus['ban_reason']}');
+                DebugLogger.log('User is banned - clearing login state', tag: 'PersistentAuth');
+                DebugLogger.log('Ban reason: ${userStatus['ban_reason']}', tag: 'PersistentAuth');
                 await clearLoginState();
                 return null;
               }
             }
           }
         } catch (e) {
-          print('⚠️ PersistentAuth: Error checking ban status: $e');
+          DebugLogger.log('Error checking ban status', tag: 'PersistentAuth');
           // Continue with login but log the error
         }
         
-        print('✅ PersistentAuth: Retrieved user data for device: ${deviceInfo.id}');
+        DebugLogger.success('Retrieved user data for device: ${deviceInfo.id}');
         return userData;
       }
       
-      print('🔍 PersistentAuth: No user data found');
+      DebugLogger.api('No user data found');
       return null;
     } catch (e) {
-      print('❌ PersistentAuth: Error getting current user: $e');
+      DebugLogger.error('Error getting current user', error: e);
       return null;
     }
   }
@@ -133,7 +134,7 @@ class PersistentAuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_tokenKey);
     } catch (e) {
-      print('❌ PersistentAuth: Error getting auth token: $e');
+      DebugLogger.error('Error getting auth token', error: e);
       return null;
     }
   }
@@ -141,7 +142,7 @@ class PersistentAuthService {
   // Clear login state (logout)
   static Future<void> clearLoginState() async {
     try {
-      print('🔐 PersistentAuth: Clearing login state...');
+      DebugLogger.api('Clearing login state...');
       
       final prefs = await SharedPreferences.getInstance();
       
@@ -158,15 +159,15 @@ class PersistentAuthService {
       final loginCheck = prefs.getBool(_isLoggedInKey);
       
       if (tokenCheck == null && userCheck == null && loginCheck == false) {
-        print('✅ PersistentAuth: Login state cleared successfully');
+        DebugLogger.success('Login state cleared successfully');
       } else {
-        print('⚠️ PersistentAuth: Some data may not have been cleared properly');
+        DebugLogger.log('Some data may not have been cleared properly', tag: 'PersistentAuth');
         // Force clear again
         await prefs.clear();
-        print('🔄 PersistentAuth: Forced complete clear');
+        DebugLogger.api('Forced complete clear');
       }
     } catch (e) {
-      print('❌ PersistentAuth: Error clearing login state: $e');
+      DebugLogger.error('Error clearing login state', error: e);
     }
   }
   
@@ -176,7 +177,7 @@ class PersistentAuthService {
       final deviceInfo = await DeviceInfoPlugin().androidInfo;
       return deviceInfo.id;
     } catch (e) {
-      print('❌ PersistentAuth: Error getting device ID: $e');
+      DebugLogger.error('Error getting device ID', error: e);
       return null;
     }
   }
@@ -187,7 +188,7 @@ class PersistentAuthService {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_loginTimeKey);
     } catch (e) {
-      print('❌ PersistentAuth: Error getting last login time: $e');
+      DebugLogger.error('Error getting last login time', error: e);
       return null;
     }
   }
@@ -203,14 +204,14 @@ class PersistentAuthService {
         
         // Consider session stale after 7 days
         if (difference.inDays > 7) {
-          print('⚠️ PersistentAuth: Session is stale (${difference.inDays} days)');
+          DebugLogger.log('Session is stale (${difference.inDays} days)', tag: 'PersistentAuth');
           return false;
         }
       }
       
       return true;
     } catch (e) {
-      print('❌ PersistentAuth: Error validating session: $e');
+      DebugLogger.error('Error validating session', error: e);
       return false;
     }
   }

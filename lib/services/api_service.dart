@@ -7,6 +7,7 @@ import 'base64_image_service.dart';
 import '../config/app_config.dart';
 import 'ban_detection_service.dart';
 import 'auto_refresh_service.dart';
+import '../utils/debug_logger.dart';
 
 class ApiService {
   // Dynamic server URL - works with Python Flask server
@@ -15,20 +16,14 @@ class ApiService {
   // Token management (JWT-like tokens from new backend)
   static Future<void> _saveToken(String token) async {
     try {
-      print('🔍 _saveToken called with token: $token');
-      print('🔍 Token type: ${token.runtimeType}');
+      DebugLogger.api('Saving token: type=${token.runtimeType}, length=${token.length}');
       
       final prefs = await SharedPreferences.getInstance();
-      print('🔍 SharedPreferences instance created');
-      
       await prefs.setString('auth_token', token);
-      print('🔍 Token saved to SharedPreferences');
       
-      print('🔍 Saved auth token: $token');
+      DebugLogger.success('Token saved successfully');
     } catch (e) {
-      print('❌ _saveToken error: $e');
-      print('❌ Token type: ${token.runtimeType}');
-      print('❌ Stack trace: ${StackTrace.current}');
+      DebugLogger.error('_saveToken failed', error: e);
       throw e;
     }
   }
@@ -36,14 +31,14 @@ class ApiService {
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
-    print('🔍 Retrieved auth token: $token');
+    DebugLogger.api('Token retrieved: ${token != null ? 'present' : 'null'}');
     return token;
   }
   
   static Future<void> _removeToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
-    print('🔍 Removed auth token');
+    DebugLogger.api('Token removed');
   }
 
   // Headers (JWT Bearer token authentication)
@@ -58,9 +53,9 @@ class ApiService {
       
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
-        print('🔍 Adding JWT Bearer token for authentication');
+        DebugLogger.api('JWT Bearer token added to headers');
       } else {
-        print('🔍 No auth token available for authentication');
+        DebugLogger.warning('No auth token available for authentication');
       }
     }
 
@@ -70,10 +65,7 @@ class ApiService {
   // Authentication
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      print('🔍 ApiService.login called');
-      print('🔍 Using baseUrl: $baseUrl');
-      print('🔍 Full login URL: $baseUrl/api/auth/login');
-      print('🔍 Login data: email=$email');
+      DebugLogger.api('Login attempt for email: $email');
       
       final response = await http.post(
         Uri.parse('$baseUrl/api/auth/login'),
@@ -84,82 +76,65 @@ class ApiService {
         }),
       );
 
-      print('🔍 Login response status: ${response.statusCode}');
-      print('🔍 Login response body: ${response.body}');
+      DebugLogger.api('Login response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('🔍 Parsing JSON response...');
         final data = json.decode(response.body);
-        print('🔍 Parsed response data: $data');
         
         if (data['success'] == true) {
-          print('🔍 Login successful, processing data...');
+          DebugLogger.success('Login successful, processing data');
           
           // Save token and user data
           if (data['token'] != null) {
-            print('🔍 About to save token...');
             await _saveToken(data['token']);
-            print('🔍 Token saved successfully');
           } else {
-            print('🔍 No token in response');
+            DebugLogger.warning('No token in login response');
           }
           
-          print('🔍 About to save user data...');
           // Save user data to preferences for easy access
           if (data['user'] != null) {
-            print('🔍 User data found: ${data['user']}');
             final prefs = await SharedPreferences.getInstance();
             try {
-              print('🔍 Saving basic user fields...');
               await prefs.setString('user_email', data['user']['email']?.toString() ?? '');
               await prefs.setString('user_id', data['user']['id']?.toString() ?? '0');
               await prefs.setString('user_name', data['user']['full_name']?.toString() ?? '');
               await prefs.setString('user_role', data['user']['role']?.toString() ?? 'resident');
               
-              print('🔍 Converting boolean fields...');
               // Convert integer booleans to actual booleans with null safety
               final verified = data['user']['verified'];
               final emailVerified = data['user']['email_verified'];
               final isActive = data['user']['is_active'];
               
-              print('🔍 Converting booleans: verified=$verified (${verified.runtimeType}), email_verified=$emailVerified (${emailVerified.runtimeType}), is_active=$isActive (${isActive.runtimeType})');
-              
-              print('🔍 Saving verified field...');
               await prefs.setBool('user_verified', (verified == 1 || verified == true) ?? false);
-              print('🔍 Saving discount rate...');
               await prefs.setDouble('user_discount_rate', (data['user']['discount_rate'] ?? 0.0).toDouble());
-              print('🔍 Saving contact number...');
               await prefs.setString('user_contact_number', data['user']['contact_number']?.toString() ?? '');
-              print('🔍 Saving profile photo...');
               await prefs.setString('user_profile_photo_url', data['user']['profile_photo_url']?.toString() ?? '');
-              print('🔍 User data saved successfully');
+              DebugLogger.success('User data saved successfully');
             } catch (e) {
-              print('❌ SharedPreferences error: $e');
-              print('❌ User data: ${data['user']}');
+              DebugLogger.error('SharedPreferences error during login', error: e);
               throw e;
             }
           } else {
-            print('🔍 No user data in response');
+            DebugLogger.warning('No user data in login response');
           }
           
-          print('🔍 Returning success data...');
           return data;
         } else {
-          print('🔍 Login failed: ${data['message']}');
+          DebugLogger.warning('Login failed: ${data['message']}');
           return {'success': false, 'message': data['message'] ?? 'Login failed'};
         }
       } else {
-        print('🔍 HTTP error: ${response.statusCode}');
+        DebugLogger.error('HTTP error during login: ${response.statusCode}');
         // For non-200 status codes, try to parse error message from response body
         try {
           final errorData = json.decode(response.body);
-          return {'success': false, 'message': errorData['message'] ?? 'Server error: ${response.statusCode}'};
+          return {'success': false, 'message': errorData['message'] ?? 'Login failed'};
         } catch (e) {
-          return {'success': false, 'message': 'Server error: ${response.statusCode}'};
+          return {'success': false, 'message': 'Login failed'};
         }
       }
     } catch (e) {
-      print('❌ ApiService.login exception: $e');
+      DebugLogger.error('Login exception', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -177,8 +152,7 @@ class ApiService {
         headers: await getHeaders(),
       );
 
-      print('🔍 getCurrentUser response status: ${response.statusCode}');
-      print('🔍 getCurrentUser response body: ${response.body}');
+      DebugLogger.api('getCurrentUser response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -187,7 +161,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ getCurrentUser exception: $e');
+      DebugLogger.error('getCurrentUser exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -200,8 +174,7 @@ class ApiService {
         headers: await getHeaders(),
       );
 
-      print('🔍 getFacilities response status: ${response.statusCode}');
-      print('🔍 getFacilities response body: ${response.body}');
+      DebugLogger.api('getFacilities response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -210,7 +183,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ getFacilities exception: $e');
+      DebugLogger.error('getFacilities exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -238,15 +211,14 @@ class ApiService {
         url += '?$queryString';
       }
       
-      print('🔍 getBookings URL: $url');
-      print('🔍 getBookings userRole: $userRole');
+      DebugLogger.api('getBookings URL: $url, userRole: $userRole');
 
       final response = await http.get(
         Uri.parse(url),
         headers: await getHeaders(),
       );
 
-      print('🔍 getBookings response status: ${response.statusCode}');
+      DebugLogger.api('getBookings response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -256,11 +228,11 @@ class ApiService {
           return {'success': false, 'error': data['error'] ?? 'Failed to get bookings'};
         }
       } else {
-        print('🔍 getBookings - failed with status: ${response.statusCode}');
+        DebugLogger.warning('getBookings failed with status: ${response.statusCode}');
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ getBookings exception: $e');
+      DebugLogger.error('getBookings exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -268,7 +240,7 @@ class ApiService {
   // Create booking
   static Future<Map<String, dynamic>> createBooking(Map<String, dynamic> bookingData) async {
     try {
-      print('🔍 createBooking called with data: $bookingData');
+      DebugLogger.api('createBooking called');
       
       final response = await http.post(
         Uri.parse('$baseUrl/api/bookings'),
@@ -276,15 +248,14 @@ class ApiService {
         body: json.encode(bookingData),
       );
 
-      print('🔍 createBooking response status: ${response.statusCode}');
-      print('🔍 createBooking response body: ${response.body}');
+      DebugLogger.api('createBooking response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
         // Trigger auto-refresh if booking was successful and refresh_data is provided
         if (data['success'] == true && data.containsKey('refresh_data')) {
-          print('🔄 Triggering auto-refresh for booking creation');
+          DebugLogger.api('Triggering auto-refresh for booking creation');
           await AutoRefreshService().triggerAutoRefresh(data['refresh_data']);
         }
         
@@ -305,7 +276,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('❌ createBooking exception: $e');
+      DebugLogger.error('createBooking exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -313,7 +284,7 @@ class ApiService {
   // Check booking conflict
   static Future<Map<String, dynamic>> checkBookingConflict(Map<String, dynamic> bookingData) async {
     try {
-      print('🔍 checkBookingConflict called with data: $bookingData');
+      DebugLogger.api('checkBookingConflict called');
       
       final response = await http.post(
         Uri.parse('$baseUrl/api/bookings/check-conflict'),
@@ -321,8 +292,7 @@ class ApiService {
         body: json.encode(bookingData),
       );
 
-      print('🔍 checkBookingConflict response status: ${response.statusCode}');
-      print('🔍 checkBookingConflict response body: ${response.body}');
+      DebugLogger.api('checkBookingConflict response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -335,7 +305,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ checkBookingConflict exception: $e');
+      DebugLogger.error('checkBookingConflict exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -361,8 +331,7 @@ class ApiService {
         body: json.encode(updateData),
       );
 
-      print('🔍 updateBookingStatus response status: ${response.statusCode}');
-      print('🔍 updateBookingStatus response body: ${response.body}');
+      DebugLogger.api('updateBookingStatus response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -375,7 +344,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ updateBookingStatus exception: $e');
+      DebugLogger.error('updateBookingStatus exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -388,7 +357,7 @@ class ApiService {
         headers: await getHeaders(),
       );
 
-      print('🔍 getVerificationRequests response status: ${response.statusCode}');
+      DebugLogger.api('getVerificationRequests response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -401,7 +370,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ getVerificationRequests exception: $e');
+      DebugLogger.error('getVerificationRequests exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -440,8 +409,7 @@ class ApiService {
         body: json.encode(updateData),
       );
 
-      print('🔍 updateVerificationStatus response status: ${response.statusCode}');
-      print('🔍 updateVerificationStatus request data: $updateData');
+      DebugLogger.api('updateVerificationStatus response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -454,7 +422,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ updateVerificationStatus exception: $e');
+      DebugLogger.error('updateVerificationStatus exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -467,7 +435,7 @@ class ApiService {
         headers: await getHeaders(),
       );
 
-      print('🔍 getTimeSlots response status: ${response.statusCode}');
+      DebugLogger.api('getTimeSlots response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -480,7 +448,7 @@ class ApiService {
         return {'success': false, 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ getTimeSlots exception: $e');
+      DebugLogger.error('getTimeSlots exception', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -514,7 +482,7 @@ class ApiService {
         return {'success': true, 'message': 'Logged out successfully'};
       }
     } catch (e) {
-      print('❌ logout exception: $e');
+      DebugLogger.error('logout exception', error: e);
       // Still clear local data even if network fails
       await _removeToken();
       return {'success': true, 'message': 'Logged out successfully'};
@@ -535,7 +503,7 @@ class ApiService {
         return {'status': 'unhealthy', 'error': 'HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ healthCheck exception: $e');
+      DebugLogger.api('healthCheck exception', error: e);
       return {'status': 'unhealthy', 'error': e.toString()};
     }
   }
@@ -544,7 +512,7 @@ class ApiService {
   static Future<void> clearUserData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    print('🔍 Cleared all user data');
+    DebugLogger.api('Cleared all user data');
   }
 
   // Additional methods for compatibility
@@ -555,10 +523,7 @@ class ApiService {
     {String role = 'resident'}
   ) async {
     try {
-      print('🔍 ApiService.register called');
-      print('🔍 Using baseUrl: $baseUrl');
-      print('🔍 Full register URL: $baseUrl/api/auth/register');
-      print('🔍 Registration data: name=$name, email=$email, role=$role');
+      DebugLogger.api('Register called for email: $email, role: $role');
       
       final response = await http.post(
         Uri.parse('$baseUrl/api/auth/register'),
@@ -571,12 +536,11 @@ class ApiService {
         }),
       );
 
-      print('🔍 Registration response status: ${response.statusCode}');
-      print('🔍 Registration response body: ${response.body}');
+      DebugLogger.api('Registration response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('🔍 Parsed response data: $data');
+        DebugLogger.api('Registration response parsed');
         return data;
       } else {
         // For non-200 status codes, try to parse error message from response body
@@ -588,7 +552,7 @@ class ApiService {
         }
       }
     } catch (e) {
-      print('❌ Registration exception: $e');
+      DebugLogger.error('Registration exception', error: e);
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
@@ -608,7 +572,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('❌ getOfficials error: $e');
+      DebugLogger.error('getOfficials error', error: e);
       return [];
     }
   }
@@ -625,12 +589,11 @@ class ApiService {
         final data = json.decode(response.body);
         return data;
       } else {
-        print('❌ updateProfile failed with status: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
+        DebugLogger.warning('updateProfile failed with status: ${response.statusCode}');
         return {'success': false, 'message': 'Update failed'};
       }
     } catch (e) {
-      print('❌ updateProfile error: $e');
+      DebugLogger.error('updateProfile error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -649,7 +612,7 @@ class ApiService {
         return {'success': false, 'error': 'Profile not found'};
       }
     } catch (e) {
-      print('❌ getUserProfile error: $e');
+      DebugLogger.error('getUserProfile error', error: e);
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -675,19 +638,18 @@ class ApiService {
         final data = json.decode(response.body);
         return data;
       } else {
-        print('❌ updateUserProfileWithToken failed with status: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
+        DebugLogger.warning('updateUserProfileWithToken failed with status: ${response.statusCode}');
         return {'success': false, 'message': 'Update failed'};
       }
     } catch (e) {
-      print('❌ updateUserProfileWithToken error: $e');
+      DebugLogger.error('updateUserProfileWithToken error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
 
   static Future<Map<String, dynamic>> createVerificationRequest(Map<String, dynamic> verificationData) async {
     try {
-      print('🔍 createVerificationRequest - Sending data: $verificationData');
+      DebugLogger.api('createVerificationRequest called');
       
       final response = await http.post(
         Uri.parse('$baseUrl/api/verification-requests'),
@@ -695,8 +657,7 @@ class ApiService {
         body: json.encode(verificationData),
       );
 
-      print('🔍 createVerificationRequest - Response status: ${response.statusCode}');
-      print('🔍 createVerificationRequest - Response body: ${response.body}');
+      DebugLogger.api('createVerificationRequest response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -709,7 +670,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to create verification request - HTTP ${response.statusCode}'};
       }
     } catch (e) {
-      print('❌ createVerificationRequest error: $e');
+      DebugLogger.error('createVerificationRequest error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -729,7 +690,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to create facility'};
       }
     } catch (e) {
-      print('❌ createFacility error: $e');
+      DebugLogger.error('createFacility error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -749,7 +710,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to update facility'};
       }
     } catch (e) {
-      print('❌ updateFacility error: $e');
+      DebugLogger.error('updateFacility error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -768,7 +729,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to delete facility'};
       }
     } catch (e) {
-      print('❌ deleteFacility error: $e');
+      DebugLogger.error('deleteFacility error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -787,7 +748,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to regenerate time slots'};
       }
     } catch (e) {
-      print('❌ regenerateFacilityTimeSlots error: $e');
+      DebugLogger.error('regenerateFacilityTimeSlots error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -805,7 +766,7 @@ class ApiService {
       );
 
       final data = json.decode(response.body);
-      print('🔍 Email OTP verification response: $data');
+      DebugLogger.api('Email OTP verification response: success=${data['success']}');
       
       if (response.statusCode == 200) {
         return data;
@@ -813,7 +774,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to verify OTP'};
       }
     } catch (e) {
-      print('❌ verifyEmailOTP error: $e');
+      DebugLogger.error('verifyEmailOTP error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -829,7 +790,7 @@ class ApiService {
       );
 
       final data = json.decode(response.body);
-      print('🔍 Resend OTP response: $data');
+      DebugLogger.api('Resend OTP response: success=${data['success']}');
       
       if (response.statusCode == 200) {
         return data;
@@ -837,7 +798,7 @@ class ApiService {
         return {'success': false, 'message': 'Failed to resend OTP'};
       }
     } catch (e) {
-      print('❌ resendOTP error: $e');
+      DebugLogger.error('resendOTP error', error: e);
       return {'success': false, 'message': e.toString()};
     }
   }
