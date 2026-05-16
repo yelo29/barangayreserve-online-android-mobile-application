@@ -9,8 +9,9 @@ import '../services/auth_api_service.dart';
 
 class ResidentVerificationScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
   
-  const ResidentVerificationScreen({super.key, this.userData});
+  const ResidentVerificationScreen({super.key, this.userData, this.isDarkMode = false});
 
   @override
   State<ResidentVerificationScreen> createState() => _ResidentVerificationScreenState();
@@ -350,10 +351,10 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.blue[50],
       appBar: AppBar(
         title: const Text('Account Verification'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -371,18 +372,18 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    border: Border.all(color: Colors.orange[200]!),
+                    color: widget.isDarkMode ? Colors.orange.shade900.withOpacity(0.3) : Colors.orange[50],
+                    border: Border.all(color: widget.isDarkMode ? Colors.orange.shade700 : Colors.orange[200]!),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.orange[600], size: 24),
+                      Icon(Icons.info_outline, color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange[600], size: 24),
                       const SizedBox(height: 8),
                       Text(
                         _lockMessage,
                         style: TextStyle(
-                          color: Colors.orange[800],
+                          color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange[800],
                           fontWeight: FontWeight.w500,
                         ),
                         textAlign: TextAlign.center,
@@ -404,6 +405,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                   children: [
                     TextFormField(
                       controller: _nameController,
+                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                       decoration: _buildInputDecoration('Full Name*', Icons.person),
                       enabled: _canSubmit, // Lock based on verification status
                       validator: (value) {
@@ -416,6 +418,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _contactController,
+                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                       decoration: _buildInputDecoration('Contact Number*', Icons.phone),
                       keyboardType: TextInputType.phone,
                       enabled: _canSubmit, // Lock based on verification status
@@ -429,6 +432,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _addressController,
+                      style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                       decoration: _buildInputDecoration('Complete Address*', Icons.location_on),
                       maxLines: 2,
                       enabled: _canSubmit, // Lock based on verification status
@@ -469,7 +473,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                       : const Icon(Icons.verified_user),
                   label: Text(_isLoading ? 'Submitting...' : 'Submit Verification'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _canSubmit ? Colors.blue : Colors.grey, // Blue for enabled, grey for locked
+                    backgroundColor: _canSubmit ? (widget.isDarkMode ? Colors.blue.shade700 : Colors.blue) : Colors.grey, // Blue for enabled, grey for locked
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -503,11 +507,11 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -522,12 +526,12 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   _isVerifiedResident ? Icons.verified : Icons.verified_user,
-                  color: _isVerifiedResident ? Colors.green : Colors.blue[600],
+                  color: _isVerifiedResident ? Colors.green : (widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600]),
                   size: 24,
                 ),
               ),
@@ -541,7 +545,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: _isVerifiedResident ? Colors.green : Colors.black87,
+                        color: _isVerifiedResident ? Colors.green : (widget.isDarkMode ? Colors.white : Colors.black87),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -549,7 +553,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                       subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -607,11 +611,11 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -625,10 +629,10 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
             const SizedBox(height: 16),
@@ -643,12 +647,12 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Verification Type*',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
@@ -664,17 +668,23 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: _selectedVerificationType == 'resident' ? Colors.blue : ((_canSubmit && !_isVerifiedResident) ? Colors.grey[100] : Colors.grey[50]),
+                    color: _selectedVerificationType == 'resident' 
+                      ? (widget.isDarkMode ? Colors.blue.shade700 : Colors.blue) 
+                      : ((_canSubmit && !_isVerifiedResident) ? (widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[100]) : (widget.isDarkMode ? Colors.grey.shade800 : Colors.grey[50])),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _selectedVerificationType == 'resident' ? Colors.blue : ((_canSubmit && !_isVerifiedResident) ? Colors.grey[300]! : Colors.grey[200]!),
+                      color: _selectedVerificationType == 'resident' 
+                        ? (widget.isDarkMode ? Colors.blue.shade700 : Colors.blue) 
+                        : ((_canSubmit && !_isVerifiedResident) ? (widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!) : (widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[200]!)),
                     ),
                   ),
                   child: Text(
                     'Barangay Resident',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _selectedVerificationType == 'resident' ? Colors.white : ((_canSubmit && !_isVerifiedResident) ? Colors.black87 : Colors.grey[400]),
+                      color: _selectedVerificationType == 'resident' 
+                        ? Colors.white 
+                        : ((_canSubmit && !_isVerifiedResident) ? (widget.isDarkMode ? Colors.white : Colors.black87) : (widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[400])),
                       fontWeight: _selectedVerificationType == 'resident' ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -692,17 +702,23 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: _selectedVerificationType == 'non-resident' ? Colors.blue : ((_canSubmit && !_isVerifiedNonResident) ? Colors.grey[100] : Colors.grey[50]),
+                    color: _selectedVerificationType == 'non-resident' 
+                      ? (widget.isDarkMode ? Colors.blue.shade700 : Colors.blue) 
+                      : ((_canSubmit && !_isVerifiedNonResident) ? (widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[100]) : (widget.isDarkMode ? Colors.grey.shade800 : Colors.grey[50])),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _selectedVerificationType == 'non-resident' ? Colors.blue : ((_canSubmit && !_isVerifiedNonResident) ? Colors.grey[300]! : Colors.grey[200]!),
+                      color: _selectedVerificationType == 'non-resident' 
+                        ? (widget.isDarkMode ? Colors.blue.shade700 : Colors.blue) 
+                        : ((_canSubmit && !_isVerifiedNonResident) ? (widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!) : (widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[200]!)),
                     ),
                   ),
                   child: Text(
                     'Non-Resident',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _selectedVerificationType == 'non-resident' ? Colors.white : ((_canSubmit && !_isVerifiedNonResident) ? Colors.black87 : Colors.grey[400]),
+                      color: _selectedVerificationType == 'non-resident' 
+                        ? Colors.white 
+                        : ((_canSubmit && !_isVerifiedNonResident) ? (widget.isDarkMode ? Colors.white : Colors.black87) : (widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[400])),
                       fontWeight: _selectedVerificationType == 'non-resident' ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -769,10 +785,10 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: widget.isDarkMode ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 4),
@@ -780,7 +796,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
             subtitle,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
             ),
           ),
           const SizedBox(height: 12),
@@ -790,7 +806,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
               width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
               ),
               child: Stack(
                 children: [
@@ -831,10 +847,10 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
               height: 120,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: _canSubmit ? Colors.grey[100] : Colors.grey[200], // Darker grey for locked
+                color: _canSubmit ? (widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[100]) : (widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[200]), // Darker grey for locked
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.grey[300]!, 
+                  color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!, 
                   style: BorderStyle.solid,
                 ),
               ),
@@ -849,13 +865,13 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                       Icon(
                         _canSubmit ? Icons.cloud_upload : Icons.lock,
                         size: 32,
-                        color: _canSubmit ? Colors.grey[400] : Colors.grey[400],
+                        color: _canSubmit ? (widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[400]) : (widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[400]),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _canSubmit ? 'Tap to upload' : 'Locked',
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -864,7 +880,7 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
                       Text(
                         'JPG, PNG up to 5MB',
                         style: TextStyle(
-                          color: Colors.grey[500],
+                          color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[500],
                           fontSize: 12,
                         ),
                       ),
@@ -881,12 +897,14 @@ class _ResidentVerificationScreenState extends State<ResidentVerificationScreen>
   InputDecoration _buildInputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon),
+      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+      prefixIcon: Icon(icon, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
       ),
       filled: true,
-      fillColor: Colors.grey[50],
+      fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
     );
   }
 }

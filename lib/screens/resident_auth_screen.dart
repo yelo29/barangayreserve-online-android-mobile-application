@@ -186,11 +186,15 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFDBEAFE), Color(0xFFFECACA)],
+            colors: isDarkMode 
+              ? [const Color(0xFF1a1a2e), const Color(0xFF16213e)]
+              : [const Color(0xFFDBEAFE), const Color(0xFFFECACA)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -207,13 +211,13 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                     height: 120,
                     width: 120,
                     decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(230),
+                      color: isDarkMode ? Colors.grey.shade800 : Colors.white.withAlpha(230),
                       shape: BoxShape.circle,
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black26,
+                          color: isDarkMode ? Colors.black.withOpacity(0.3) : Colors.black26,
                           blurRadius: 12,
-                          offset: Offset(0, 6),
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -224,24 +228,24 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                   const SizedBox(height: 32),
 
                   // Title
-                  const Text(
+                  Text(
                     "Resident Access",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black87,
+                      color: isDarkMode ? Colors.white : Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 12),
 
                   // Subtitle
-                  const Text(
+                  Text(
                     "Use your Gmail account to access barangay services",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.black54,
+                      color: isDarkMode ? Colors.grey.shade400 : Colors.black54,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -253,11 +257,11 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                       size: 50,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       "Authenticating with Gmail...",
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.black54,
+                        color: isDarkMode ? Colors.grey.shade400 : Colors.black54,
                       ),
                     ),
                   ],
@@ -267,19 +271,19 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        border: Border.all(color: Colors.red.shade200),
+                        color: isDarkMode ? Colors.red.shade900 : Colors.red.shade50,
+                        border: Border.all(color: isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red.shade600),
+                          Icon(Icons.error_outline, color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               _errorMessage,
                               style: TextStyle(
-                                color: Colors.red.shade600,
+                                color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600,
                                 fontSize: 14,
                               ),
                             ),
@@ -296,9 +300,9 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                       width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
@@ -312,8 +316,8 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: () => _handleGmailAuth(false),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -332,7 +336,7 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    color: isDarkMode ? Colors.white : Colors.black87,
                                   ),
                                 ),
                               ],
@@ -402,21 +406,21 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        border: Border.all(color: Colors.blue.shade200),
+                        color: isDarkMode ? Colors.grey.shade800 : Colors.blue.shade50,
+                        border: Border.all(color: isDarkMode ? Colors.grey.shade600 : Colors.blue.shade200),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.info_outline, color: Colors.blue.shade600),
+                              Icon(Icons.info_outline, color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   "Gmail authentication provides automatic verification for barangay residents",
                                   style: TextStyle(
-                                    color: Colors.blue.shade600,
+                                    color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -425,10 +429,10 @@ class _ResidentAuthScreenState extends State<ResidentAuthScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             "• No password required\n• Instant verification\n• Secure access",
                             style: TextStyle(
-                              color: Colors.black54,
+                              color: isDarkMode ? Colors.grey.shade400 : Colors.black54,
                               fontSize: 12,
                             ),
                           ),

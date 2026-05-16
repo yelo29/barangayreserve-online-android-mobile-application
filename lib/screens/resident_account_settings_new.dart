@@ -10,8 +10,9 @@ import '../../../utils/debug_logger.dart';
 
 class ResidentAccountSettingsScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
   
-  const ResidentAccountSettingsScreen({super.key, this.userData});
+  const ResidentAccountSettingsScreen({super.key, this.userData, this.isDarkMode = false});
 
   @override
   State<ResidentAccountSettingsScreen> createState() => _ResidentAccountSettingsScreenState();
@@ -283,10 +284,10 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
     // 🚫 BAN VALIDATION: Check if user is banned before allowing access
     if (_currentUser != null && _currentUser!['is_banned'] == true) {
       return Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.grey[100],
         appBar: AppBar(
           title: const Text('Account Restricted'),
-          backgroundColor: Colors.red,
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red,
           foregroundColor: Colors.white,
           elevation: 0,
         ),
@@ -299,7 +300,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                 Icon(
                   Icons.block,
                   size: 80,
-                  color: Colors.red[400],
+                  color: widget.isDarkMode ? Colors.red.shade400 : Colors.red[400],
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -307,7 +308,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red[700],
+                    color: widget.isDarkMode ? Colors.red.shade400 : Colors.red[700],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -316,7 +317,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[700],
+                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -326,7 +327,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                   style: TextStyle(
                     fontSize: 14,
                     fontStyle: FontStyle.italic,
-                    color: Colors.grey[600],
+                    color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -355,10 +356,10 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
     }
 
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.blue[50],
       appBar: AppBar(
         title: const Text('Account Settings'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -371,11 +372,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -391,13 +392,13 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Icon(
                           Icons.person,
                           size: 30,
-                          color: Colors.blue[600],
+                          color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -407,10 +408,10 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                           children: [
                             Text(
                               _currentUser?['email'] ?? widget.userData?['email'] ?? 'resident@example.com',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: widget.isDarkMode ? Colors.white : Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -455,11 +456,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             // Personal Information Section
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -473,12 +474,12 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Personal Information',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -487,9 +488,9 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                         ),
                         child: Column(
                           children: [
@@ -500,9 +501,9 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                   width: 80,
                                   height: 80,
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[50],
+                                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.blue[50],
                                     borderRadius: BorderRadius.circular(40),
-                                    border: Border.all(color: Colors.blue[200]!),
+                                    border: Border.all(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.blue[200]!),
                                   ),
                                   child: Stack(
                                     children: [
@@ -520,7 +521,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                             width: 28,
                                             height: 28,
                                             decoration: BoxDecoration(
-                                              color: Colors.blue[600],
+                                              color: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue[600],
                                               shape: BoxShape.circle,
                                             ),
                                             child: _isUploadingPhoto
@@ -549,7 +550,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
+                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -557,7 +558,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                         'Tap to change your profile photo',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                         ),
                                       ),
                                     ],
@@ -571,14 +572,17 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Full Name',
-                          prefixIcon: const Icon(Icons.person),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.person, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -590,14 +594,17 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _contactController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Contact Number',
-                          prefixIcon: const Icon(Icons.phone),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.phone, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
@@ -610,14 +617,17 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _addressController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Address',
-                          prefixIcon: const Icon(Icons.location_on),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.location_on, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         maxLines: 2,
                         validator: (value) {
@@ -644,7 +654,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                               : const Icon(Icons.save),
                           label: Text(_isLoading ? 'Updating...' : 'Update Personal Information'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -664,11 +674,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             // Customer Service Section
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -680,12 +690,12 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Customer Service',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -693,7 +703,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       'Contact barangay officials for assistance',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -702,15 +712,15 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 12),
-                            Text('Loading officials...'),
+                            CircularProgressIndicator(color: widget.isDarkMode ? Colors.white : null),
+                            const SizedBox(width: 12),
+                            Text('Loading officials...', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
                           ],
                         ),
                       )
@@ -721,21 +731,21 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey[50],
+                              color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                             ),
                             child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[50],
+                                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.blue[50],
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.person,
-                                    color: Colors.blue,
+                                    color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue,
                                     size: 20,
                                   ),
                                 ),
@@ -746,9 +756,10 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                     children: [
                                       Text(
                                         official['full_name'] ?? 'Unknown Official',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
+                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -756,7 +767,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                         official['contact_number']?.toString() ?? 'No contact available',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                         ),
                                       ),
                                     ],
@@ -771,22 +782,22 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.info_outline,
-                              color: Colors.grey[600],
+                              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Contact barangay office for assistance',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                   fontSize: 14,
                                 ),
                               ),
@@ -834,11 +845,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -849,32 +860,32 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: Colors.blue[600],
+            color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
           ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: Colors.blue[600],
+          color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
           size: 20,
         ),
         onTap: onTap,

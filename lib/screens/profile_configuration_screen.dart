@@ -119,13 +119,15 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
-        backgroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: isDarkMode ? Colors.grey.shade800 : const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -141,25 +143,25 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F0FE),
+                    color: isDarkMode ? Colors.grey.shade800 : const Color(0xFFE8F0FE),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.person,
                     size: 50,
-                    color: Color(0xFF1E3A8A),
+                    color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A),
                   ),
                 ),
                 
                 const SizedBox(height: 30),
                 
                 // Title
-                const Text(
+                Text(
                   'Complete Your Profile',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E3A8A),
+                    color: isDarkMode ? Colors.white : const Color(0xFF1E3A8A),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -169,32 +171,32 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    border: Border.all(color: Colors.blue.shade200),
+                    color: isDarkMode ? Colors.grey.shade800 : Colors.blue.shade50,
+                    border: Border.all(color: isDarkMode ? Colors.grey.shade600 : Colors.blue.shade200),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: Colors.blue.shade600,
+                        color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600,
                         size: 24,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Profile Setup Required',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: isDarkMode ? Colors.blue.shade300 : Colors.blue,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Please provide your contact information to complete your profile setup.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.black87,
+                          color: isDarkMode ? Colors.grey.shade300 : Colors.black87,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -202,34 +204,34 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          border: Border.all(color: Colors.orange.shade200),
+                          color: isDarkMode ? Colors.orange.shade900 : Colors.orange.shade50,
+                          border: Border.all(color: isDarkMode ? Colors.orange.shade700 : Colors.orange.shade200),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
                           children: [
                             Icon(
                               Icons.warning_amber_outlined,
-                              color: Colors.orange.shade600,
+                              color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade600,
                               size: 20,
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               'IMPORTANT NOTICE',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange,
+                                color: isDarkMode ? Colors.orange.shade300 : Colors.orange,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
+                            Text(
                               '• After saving your profile, you will be redirected to the login screen\n'
                               '• You must login again with your Gmail account\n'
                               '• Your completed profile will be available after login',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.black87,
+                                color: isDarkMode ? Colors.grey.shade300 : Colors.black87,
                               ),
                               textAlign: TextAlign.left,
                             ),
@@ -245,16 +247,19 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                 // Full Name Field
                 TextFormField(
                   controller: _nameController,
+                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
                   decoration: InputDecoration(
                     labelText: 'Full Name',
                     hintText: 'Enter your full name',
-                    prefixIcon: const Icon(Icons.person, color: Color(0xFF1E3A8A)),
+                    labelStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                    hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                    prefixIcon: Icon(Icons.person, color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                      borderSide: BorderSide(color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A), width: 2),
                     ),
                   ),
                   validator: (value) {
@@ -274,16 +279,19 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                 TextFormField(
                   controller: _contactController,
                   keyboardType: TextInputType.phone,
+                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
                   decoration: InputDecoration(
                     labelText: 'Contact Number',
                     hintText: 'Enter your contact number',
-                    prefixIcon: const Icon(Icons.phone, color: Color(0xFF1E3A8A)),
+                    labelStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                    hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                    prefixIcon: Icon(Icons.phone, color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                      borderSide: BorderSide(color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A), width: 2),
                     ),
                   ),
                   validator: (value) {
@@ -303,16 +311,19 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                 TextFormField(
                   controller: _addressController,
                   maxLines: 3,
+                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
                   decoration: InputDecoration(
                     labelText: 'Address',
                     hintText: 'Enter your complete address',
-                    prefixIcon: const Icon(Icons.location_on, color: Color(0xFF1E3A8A)),
+                    labelStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                    hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                    prefixIcon: Icon(Icons.location_on, color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                      borderSide: BorderSide(color: isDarkMode ? Colors.blue.shade300 : const Color(0xFF1E3A8A), width: 2),
                     ),
                   ),
                   validator: (value) {
@@ -333,18 +344,18 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                   Container(
                     padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      border: Border.all(color: Colors.red.shade200),
+                      color: isDarkMode ? Colors.red.shade900 : Colors.red.shade50,
+                      border: Border.all(color: isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error, color: Colors.red.shade600, size: 20),
+                        Icon(Icons.error, color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600, size: 20),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(color: Colors.red.shade600),
+                            style: TextStyle(color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600),
                           ),
                         ),
                       ],
@@ -382,7 +393,7 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
+                          backgroundColor: isDarkMode ? Colors.blue.shade700 : const Color(0xFF1E3A8A),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
                           shape: RoundedRectangleBorder(
@@ -396,7 +407,7 @@ class _ProfileConfigurationScreenState extends State<ProfileConfigurationScreen>
                         'After saving, you will be redirected to login screen',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                           fontStyle: FontStyle.italic,
                         ),
                         textAlign: TextAlign.center,

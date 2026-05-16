@@ -10,11 +10,13 @@ import '../../../main.dart';
 class ResidentProfileTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final Function(BuildContext) onLogout;
+  final bool isDarkMode;
   
   const ResidentProfileTab({
     super.key, 
     this.userData,
     required this.onLogout,
+    this.isDarkMode = false,
   });
 
   @override
@@ -161,14 +163,14 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
                     spreadRadius: 2,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
@@ -187,8 +189,8 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                             height: 80,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white,
-                              border: Border.all(color: Colors.white, width: 3),
+                              color: widget.isDarkMode ? Colors.grey.shade700 : Colors.white,
+                              border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.2),
@@ -224,7 +226,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                               : Icon(
                                   Icons.person,
                                   size: 40,
-                                  color: Colors.grey[600],
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                 ),
                           ),
                         ],
@@ -236,7 +238,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                           children: [
                             Text(
                               _authApiService.getUserFullName(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -328,6 +330,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                         MaterialPageRoute(
                           builder: (context) => ResidentAccountSettingsScreen(
                             userData: widget.userData,
+                            isDarkMode: widget.isDarkMode,
                           ),
                         ),
                       );
@@ -352,6 +355,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                         MaterialPageRoute(
                           builder: (context) => ResidentVerificationScreen(
                             userData: _currentUser,
+                            isDarkMode: widget.isDarkMode,
                           ),
                         ),
                       ).then((_) {
@@ -394,7 +398,7 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
                         : const Icon(Icons.logout),
                       label: Text(_isLoggingOut ? 'Logging out...' : 'Logout'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -422,11 +426,11 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -437,32 +441,32 @@ class _ResidentProfileTabState extends State<ResidentProfileTab> with AutoRefres
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: Colors.blue[600],
+            color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue[600],
           ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: Colors.blue[600],
+          color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue[600],
           size: 20,
         ),
         onTap: onTap,

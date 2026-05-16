@@ -9,8 +9,9 @@ import '../../../services/auto_refresh_service.dart';
 class OfficialAuthenticationTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final Function(BuildContext)? onLogout;
+  final bool isDarkMode;
 
-  const OfficialAuthenticationTab({super.key, required this.userData, this.onLogout});
+  const OfficialAuthenticationTab({super.key, required this.userData, this.onLogout, this.isDarkMode = false});
 
   @override
   State<OfficialAuthenticationTab> createState() => _OfficialAuthenticationTabState();
@@ -158,6 +159,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -166,7 +168,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.red,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -177,7 +179,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                 children: [
                   Row(
                   children: [
-                    const Text(
+                    Text(
                       'Authentication Requests',
                       style: TextStyle(
                         fontSize: 24,
@@ -199,7 +201,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                     'Review resident verification requests',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.red[100],
+                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.red[100],
                     ),
                   ),
                 ],
@@ -213,9 +215,9 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,9 +225,9 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                   // Header with hamburger menu
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Filter Requests',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
                       ),
                       const Spacer(),
                       // Hamburger menu icon
@@ -238,12 +240,12 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
+                            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Icon(
                             Icons.menu,
-                            color: Colors.blue,
+                            color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                             size: 20,
                           ),
                         ),
@@ -295,7 +297,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                               Icon(
                                 Icons.verified_user,
                                 size: 80,
-                                color: Colors.grey[400],
+                                color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[400],
                               ),
                               const SizedBox(height: 16),
                               Text(
@@ -304,7 +306,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                                     : "No $_selectedFilter requests",
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Colors.grey[600],
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                 ),
                               ),
                               if (_searchQuery.isNotEmpty || _selectedFilter != 'all')
@@ -375,11 +377,11 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.red.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -410,10 +412,10 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                 Expanded(
                   child: Text(
                     request['full_name'] ?? 'Unknown',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: widget.isDarkMode ? Colors.white : Colors.black87,
                     ),
                   ),
                 ),
@@ -487,7 +489,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                   'Submitted: ${_formatDate(request['created_at'])}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                   ),
                 ),
 
@@ -502,7 +504,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                           icon: const Icon(Icons.close),
                           label: const Text('Reject'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
+                            backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -515,7 +517,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                           icon: const Icon(Icons.check),
                           label: const Text('Approve'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: widget.isDarkMode ? Colors.green.shade700 : Colors.green,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -540,9 +542,9 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
     return Container(
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
       ),
       child: Stack(
         children: [
@@ -560,13 +562,13 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
                   Icon(
                     Icons.person,
                     size: 32,
-                    color: Colors.grey[600],
+                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                       fontSize: 12,
                     ),
                   ),
@@ -599,10 +601,10 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
@@ -623,7 +625,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
               '$label:',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -631,9 +633,9 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
           ),
@@ -852,9 +854,9 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,13 +864,13 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
           // Search field
           TextField(
             controller: _searchController,
-            style: const TextStyle(fontSize: 13, color: Colors.black),
-            decoration: const InputDecoration(
+            style: TextStyle(fontSize: 13, color: widget.isDarkMode ? Colors.white : Colors.black),
+            decoration: InputDecoration(
               labelText: 'Search by name or email',
-              labelStyle: TextStyle(fontSize: 13, color: Colors.black),
+              labelStyle: TextStyle(fontSize: 13, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black),
               contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.search, size: 20, color: Colors.black),
+              prefixIcon: Icon(Icons.search, size: 20, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black),
             ),
             onChanged: (value) {
               setState(() {
@@ -885,7 +887,7 @@ class _OfficialAuthenticationTabState extends State<OfficialAuthenticationTab> w
             children: [
               Text(
                 'Showing ${_filteredRequests.length} of ${_verificationRequests.length}',
-                style: const TextStyle(fontSize: 12, color: Colors.black),
+                style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black),
               ),
               const Spacer(),
               if (_selectedFilter != 'all' || _searchQuery.isNotEmpty)

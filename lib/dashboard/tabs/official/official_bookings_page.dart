@@ -7,16 +7,18 @@ class OfficialBookingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     if (allBookings.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_busy, size: 60, color: Colors.grey),
-            SizedBox(height: 16),
+            Icon(Icons.event_busy, size: 60, color: isDarkMode ? Colors.grey.shade600 : Colors.grey),
+            const SizedBox(height: 16),
             Text(
               "No bookings yet.",
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(fontSize: 18, color: isDarkMode ? Colors.grey.shade600 : Colors.grey),
             ),
           ],
         ),
@@ -48,20 +50,21 @@ class OfficialBookingsPage extends StatelessWidget {
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 16.0),
+          color: isDarkMode ? Colors.grey.shade800 : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             leading: CircleAvatar(
-              backgroundColor: Colors.blue.shade100,
-              child: const Icon(Icons.event_available, color: Colors.blue),
+              backgroundColor: isDarkMode ? Colors.grey.shade700 : Colors.blue.shade100,
+              child: Icon(Icons.event_available, color: isDarkMode ? Colors.blue.shade300 : Colors.blue),
             ),
             title: Text(
               facilityName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
             ),
             subtitle: Text(
               "${booking['date'] as String? ?? ''} at ${booking['time'] as String? ?? ''}\nBooked by: ${booking['name'] as String? ?? ''}",
-              style: TextStyle(color: Colors.grey.shade600, height: 1.4),
+              style: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600, height: 1.4),
             ),
             trailing: Chip(
               label: Text(

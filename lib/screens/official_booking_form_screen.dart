@@ -16,12 +16,14 @@ class OfficialBookingFormScreen extends StatefulWidget {
   final Map<String, dynamic> facility;
   final DateTime selectedDate;
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
 
   const OfficialBookingFormScreen({
     super.key,
     required this.facility,
     required this.selectedDate,
     this.userData,
+    this.isDarkMode = false,
   });
 
   @override
@@ -410,6 +412,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         title: Row(
           children: [
             Icon(
@@ -419,7 +422,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Resident Booking Details${residentCount > 1 ? ' ($residentCount)' : ''}'),
+              child: Text('Resident Booking Details${residentCount > 1 ? ' ($residentCount)' : ''}', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
             ),
           ],
         ),
@@ -443,15 +446,15 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                         padding: const EdgeInsets.all(8),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                         ),
                         child: Text(
                           'Resident ${index + 1}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700,
+                            color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                           ),
                         ),
                       ),
@@ -464,13 +467,13 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                     _buildDetailRow('Purpose', residentBooking['purpose'] ?? 'N/A'),
                     if (residentBooking['receipt_base64'] != null) ...[
                       const SizedBox(height: 12),
-                      const Text('Receipt:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text('Receipt:', style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87)),
                       const SizedBox(height: 8),
                       Container(
                         height: 200,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ClipRRect(
@@ -489,13 +492,13 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                                   errorBuilder: (context, error, stackTrace) {
                                     return Container(
                                       height: 200,
-                                      child: const Center(
+                                      child: Center(
                                         child: Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Icon(Icons.error, color: Colors.red),
                                             SizedBox(height: 8),
-                                            Text('Error loading receipt'),
+                                            Text('Error loading receipt', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                                           ],
                                         ),
                                       ),
@@ -505,13 +508,13 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                               } catch (e) {
                                 return Container(
                                   height: 200,
-                                  child: const Center(
+                                  child: Center(
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.error, color: Colors.red),
                                         SizedBox(height: 8),
-                                        Text('Invalid receipt format'),
+                                        Text('Invalid receipt format', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                                       ],
                                     ),
                                   ),
@@ -532,7 +535,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
           ),
         ],
       ),
@@ -550,16 +553,17 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reject Booking'),
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+        title: Text('Reject Booking', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Reject booking for ${residentBooking['full_name']}?'),
+            Text('Reject booking for ${residentBooking['full_name']}?', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Select rejection reason:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
             ),
             const SizedBox(height: 8),
             StatefulBuilder(
@@ -567,7 +571,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                 return Column(
                   children: [
                     RadioListTile<String>(
-                      title: const Text('Rejected (because of incorrect amount of downpayment)'),
+                      title: Text('Rejected (because of incorrect amount of downpayment)', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                       value: 'incorrect_downpayment',
                       groupValue: selectedRejectionType,
                       onChanged: (value) {
@@ -575,7 +579,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                       },
                     ),
                     RadioListTile<String>(
-                      title: const Text('Rejected (because of fake receipt/no downpayment/payment)'),
+                      title: Text('Rejected (because of fake receipt/no downpayment/payment)', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                       value: 'fake_receipt',
                       groupValue: selectedRejectionType,
                       onChanged: (value) {
@@ -591,7 +595,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
           ),
           ElevatedButton(
             onPressed: selectedRejectionType != null
@@ -600,6 +604,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                     _executeRejection(residentBooking, selectedRejectionType!);
                   }
                 : null,
+            style: ElevatedButton.styleFrom(backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red),
             child: const Text('Reject'),
           ),
         ],
@@ -885,14 +890,15 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
           title: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.green, size: 24),
               const SizedBox(width: 8),
               Expanded(
-                child: const Text(
+                child: Text(
                   'Booking Successful!',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16, color: widget.isDarkMode ? Colors.white : Colors.black87),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -907,12 +913,12 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                 children: [
                   Text(
                     message,
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Auto-rejected Resident Bookings:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: widget.isDarkMode ? Colors.white : Colors.black87),
                   ),
                   const SizedBox(height: 8),
                   ...rejectedBookings.asMap().entries.map((entry) {
@@ -922,32 +928,32 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50,
+                        color: widget.isDarkMode ? Colors.red.shade900 : Colors.red.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade200),
+                        border: Border.all(color: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${index + 1}. ${booking['resident_name']}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black87),
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             'Email: ${booking['resident_email']}',
-                            style: const TextStyle(fontSize: 11),
+                            style: TextStyle(fontSize: 11, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87),
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
                             'Time: ${booking['original_timeslot']}',
-                            style: const TextStyle(fontSize: 11),
+                            style: TextStyle(fontSize: 11, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const Text(
+                          Text(
                             'Status: Rejected with apology',
                             style: TextStyle(
-                              color: Colors.red,
+                              color: widget.isDarkMode ? Colors.red.shade300 : Colors.red,
                               fontWeight: FontWeight.w500,
                               fontSize: 11,
                             ),
@@ -957,11 +963,11 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                     );
                   }).toList(),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Note: Residents will receive an apology message and refund notification.',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -975,7 +981,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
                 DebugLogger.ui('🎯 Dialog OK button pressed - closing dialog');
                 Navigator.of(context).pop(); // Just close the dialog
               },
-              child: const Text('OK'),
+              child: Text('OK', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             ),
           ],
         );
@@ -1014,11 +1020,11 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1031,15 +1037,16 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
             children: [
               Icon(
                 Icons.business,
-                color: Colors.red.shade800,
+                color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade800,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 'Selected Date: ${DateFormat('MMMM dd, yyyy').format(widget.selectedDate)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: widget.isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
             ],
@@ -1047,18 +1054,19 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
           const SizedBox(height: 12),
           Text(
             widget.facility['name'] ?? 'Facility',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: widget.isDarkMode ? Colors.white : Colors.black87,
             ),
           ),
           if (widget.facility['description'] != null) ...[
             const SizedBox(height: 8),
             Text(
               widget.facility['description'],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
+                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
               ),
             ),
           ],
@@ -1071,11 +1079,11 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1088,15 +1096,16 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
             children: [
               Icon(
                 Icons.calendar_today,
-                color: Colors.red.shade800,
+                color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade800,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 'Selected Date: ${DateFormat('MMMM dd, yyyy').format(widget.selectedDate)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: widget.isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
             ],
@@ -1108,17 +1117,17 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
 
   Widget _buildTimeSlotsSection() {
     if (_allTimeSlots.isEmpty) {
-      return const Center(child: Text('No time slots available'));
+      return Center(child: Text('No time slots available', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87)));
     }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1131,16 +1140,17 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
             children: [
               Icon(
                 Icons.access_time,
-                color: Colors.red.shade800,
+                color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade800,
                 size: 24,
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: const Text(
+                child: Text(
                   'Resident Bookings for This Date',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? Colors.white : Colors.black87,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1152,7 +1162,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
             'Review resident bookings for this date. Your official booking will automatically reject all resident bookings.',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 16),
@@ -1242,7 +1252,7 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : _submitBooking,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red.shade800,
+          backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade800,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -1273,9 +1283,10 @@ class _OfficialBookingFormScreenState extends State<OfficialBookingFormScreen> w
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text('Official Booking - ${widget.facility['name']}'),
-        backgroundColor: Colors.red.shade800,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red.shade800,
         foregroundColor: Colors.white,
       ),
       body: _isLoadingTimeSlots

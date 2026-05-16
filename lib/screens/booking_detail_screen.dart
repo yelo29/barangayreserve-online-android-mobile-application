@@ -7,8 +7,9 @@ import '../services/base64_image_service.dart';
 
 class BookingDetailScreen extends StatefulWidget {
   final Map<String, dynamic> booking;
+  final bool isDarkMode;
 
-  const BookingDetailScreen({super.key, required this.booking});
+  const BookingDetailScreen({super.key, required this.booking, this.isDarkMode = false});
 
   @override
   State<BookingDetailScreen> createState() => _BookingDetailScreenState();
@@ -45,7 +46,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Booking Details'),
-        backgroundColor: Colors.red,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -55,6 +56,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           children: [
             // Status Card
             Card(
+              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 4,
               child: Padding(
@@ -118,7 +120,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -129,7 +131,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     Text(
                       'Tap to view full size',
                       style: TextStyle(
-                        color: Colors.blue.shade700,
+                        color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700,
                         fontSize: 12,
                       ),
                     ),
@@ -139,19 +141,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       width: double.infinity,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.receipt_long, size: 48, color: Colors.grey.shade400),
+                            Icon(Icons.receipt_long, size: 48, color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400),
                             const SizedBox(height: 8),
                             Text(
                               'No receipt uploaded',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                 fontSize: 14,
                               ),
                             ),
@@ -213,6 +215,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   Widget _buildSectionCard(String title, List<Widget> children) {
     return Card(
+      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: Padding(
@@ -222,9 +225,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
             const SizedBox(height: 12),
@@ -246,17 +250,18 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
               ),
             ),
           ),
           Expanded(
             child: Text(
               displayValue,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
           ),

@@ -9,8 +9,9 @@ import '../../../widgets/base64_image_widget.dart';
 
 class FacilityEditScreen extends StatefulWidget {
   final Map<String, dynamic>? facility;
+  final bool isDarkMode;
 
-  const FacilityEditScreen({super.key, this.facility});
+  const FacilityEditScreen({super.key, this.facility, this.isDarkMode = false});
 
   @override
   State<FacilityEditScreen> createState() => _FacilityEditScreenState();
@@ -223,13 +224,14 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text(
           widget.facility == null
               ? 'Add New Facility'
               : 'Edit ${widget.facility!['name'] ?? 'Facility'}',
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
         actions: [
           TextButton(
@@ -265,9 +267,9 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                 width: double.infinity,
                 height: 200,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey.shade50,
+                  color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade50,
                 ),
                 child: Stack(
                   children: [
@@ -282,23 +284,23 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                           )
                         : Container(
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.add_photo_alternate,
                                     size: 48,
-                                    color: Colors.grey,
+                                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Text(
                                     'Tap to add facility image',
                                     style: TextStyle(
-                                      color: Colors.grey,
+                                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -329,24 +331,29 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               const SizedBox(height: 8),
               Text(
                 'Tap camera icon to upload facility image',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600, fontSize: 12),
               ),
               const SizedBox(height: 24),
 
               // Basic Information
-              const Text(
+              Text(
                 'Basic Information',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Facility Name',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'Enter facility name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.business, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -359,11 +366,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Description',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'Enter facility description',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.description, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 maxLines: 3,
                 validator: (value) {
@@ -377,11 +389,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _capacityController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Capacity',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., 50 people',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.people),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.people, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -393,19 +410,24 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               const SizedBox(height: 24),
 
               // Pricing Information
-              const Text(
+              Text(
                 'Pricing Information',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _rateController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Rate',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., ₱500 per 2 hours',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.attach_money, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -418,11 +440,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _downpaymentController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Downpayment Amount',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., ₱200',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance_wallet),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.account_balance_wallet, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -434,19 +461,24 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               const SizedBox(height: 24),
 
               // Amenities
-              const Text(
+              Text(
                 'Amenities',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _amenitiesController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Available Amenities',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., Tables, Chairs, Sound System, Lights',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.list),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.list, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 maxLines: 2,
                 validator: (value) {
@@ -463,18 +495,18 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error, color: Colors.red.shade600),
+                      Icon(Icons.error, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red.shade600),
+                          style: TextStyle(color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600),
                         ),
                       ),
                     ],
@@ -489,7 +521,7 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveFacility,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

@@ -270,6 +270,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     return WillPopScope(
       onWillPop: () async {
         // Show confirmation dialog before allowing back navigation
@@ -308,7 +310,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         return shouldPop ?? false;
       },
       child: Scaffold(
-        backgroundColor: Colors.blue[50],
+        backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.blue[50],
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -321,7 +323,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 Icon(
                   Icons.email_outlined,
                   size: 80,
-                  color: Colors.blue[600],
+                  color: isDarkMode ? Colors.blue.shade300 : Colors.blue[600],
                 ),
                 
                 const SizedBox(height: 24),
@@ -331,7 +333,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[900],
+                    color: isDarkMode ? Colors.white : Colors.blue[900],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -342,7 +344,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   'We sent a 6-digit verification code to:\n${widget.email}',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -359,20 +361,21 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: _focusNodes[index].hasFocus 
-                              ? Colors.blue[600]! 
-                              : Colors.grey[300]!,
+                              ? (isDarkMode ? Colors.blue.shade400 : Colors.blue[600]!) 
+                              : (isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(12),
-                        color: Colors.white,
+                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
                       ),
                       child: TextField(
                         controller: _otpControllers[index],
                         focusNode: _focusNodes[index],
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
@@ -396,18 +399,18 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red[50],
+                      color: isDarkMode ? Colors.red.shade900 : Colors.red[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red[200]!),
+                      border: Border.all(color: isDarkMode ? Colors.red.shade700 : Colors.red[200]!),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red[600], size: 20),
+                        Icon(Icons.error_outline, color: isDarkMode ? Colors.red.shade300 : Colors.red[600], size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(color: Colors.red[600]),
+                            style: TextStyle(color: isDarkMode ? Colors.red.shade300 : Colors.red[600]),
                           ),
                         ),
                       ],
@@ -420,7 +423,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _verifyOTP,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
+                    backgroundColor: isDarkMode ? Colors.blue.shade700 : Colors.blue[600],
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -475,7 +478,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   },
                   child: Text(
                     'Back to Login',
-                    style: TextStyle(color: Colors.blue[600]),
+                    style: TextStyle(color: isDarkMode ? Colors.blue.shade300 : Colors.blue[600]),
                   ),
                 ),
               ],

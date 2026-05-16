@@ -13,8 +13,9 @@ import 'resident/my_bookings_page.dart';
 
 class ResidentHomeTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
 
-  const ResidentHomeTab({super.key, this.userData});
+  const ResidentHomeTab({super.key, this.userData, this.isDarkMode = false});
 
   @override
   State<ResidentHomeTab> createState() => _ResidentHomeTabState();
@@ -298,7 +299,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -312,10 +313,10 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                       Expanded(
                         child: Text(
                           'Welcome, ${_authApiService.getUserFullName()}!',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: widget.isDarkMode ? Colors.white : Colors.white,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -323,7 +324,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                       // Refresh button
                       IconButton(
                         onPressed: _refreshData,
-                        icon: const Icon(Icons.refresh, color: Colors.white),
+                        icon: Icon(Icons.refresh, color: widget.isDarkMode ? Colors.white : Colors.white),
                         tooltip: 'Refresh',
                       ),
                     ],
@@ -331,18 +332,18 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                   const SizedBox(height: 8),
                   Text(
                     'Book facilities for your events',
-                    style: TextStyle(fontSize: 16, color: Colors.blue[100]),
+                    style: TextStyle(fontSize: 16, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.blue[100]),
                   ),
                   if (_authApiService.getUserContactNumber().isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Row(
                         children: [
-                          Icon(Icons.phone, size: 16, color: Colors.blue[100]),
+                          Icon(Icons.phone, size: 16, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.blue[100]),
                           const SizedBox(width: 4),
                           Text(
                             _authApiService.getUserContactNumber(),
-                            style: TextStyle(fontSize: 14, color: Colors.blue[100]),
+                            style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade300 : Colors.blue[100]),
                           ),
                         ],
                       ),
@@ -365,14 +366,14 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                           Icon(
                             Icons.location_city,
                             size: 80,
-                            color: Colors.grey[400],
+                            color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[400],
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No facilities available',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[600],
+                              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -397,11 +398,11 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -428,13 +429,13 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: FacilityIcon(
                           iconName: facility['main_photo_url'] ?? 'location_city',
                           size: 48,
-                          color: Colors.blue[600],
+                          color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue[600],
                         ),
                       ),
                     ),
@@ -445,10 +446,10 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                         children: [
                           Text(
                             facility['name'] ?? 'Facility Name',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: widget.isDarkMode ? Colors.white : Colors.black87,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -456,7 +457,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                             facility['description'] ?? 'Facility description',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -464,7 +465,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                     ),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.blue[600],
+                      color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue[600],
                       size: 20,
                     ),
                   ],
@@ -536,7 +537,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey[800],
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -544,7 +545,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
                     _formatAmenities(facility['amenities']),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -595,6 +596,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
         builder: (context) => FacilityCalendarScreen(
           facility: facility,
           userData: _currentUser,
+          isDarkMode: widget.isDarkMode,
         ),
       ),
     ).then((_) {
@@ -614,6 +616,7 @@ class _ResidentHomeTabState extends State<ResidentHomeTab> {
           facility: facility,
           selectedDate: DateTime.now(),
           userData: _currentUser,
+          isDarkMode: widget.isDarkMode,
         ),
       ),
     ).then((result) {

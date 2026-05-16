@@ -9,7 +9,8 @@ import '../../../utils/debug_logger.dart';
 import '../../../screens/booking_detail_screen.dart';
 
 class OfficialBookingRequestsTab extends StatefulWidget {
-  const OfficialBookingRequestsTab({super.key});
+  final bool isDarkMode;
+  const OfficialBookingRequestsTab({super.key, this.isDarkMode = false});
 
   @override
   State<OfficialBookingRequestsTab> createState() => _OfficialBookingRequestsTabState();
@@ -296,16 +297,17 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
         String selectedReason = 'incorrect_downpayment';
         
         return AlertDialog(
-          title: const Text('Rejection Reason'),
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+          title: Text('Rejection Reason', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
           content: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Please select the reason for rejection:'),
+                  Text('Please select the reason for rejection:', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                   const SizedBox(height: 16),
                   RadioListTile<String>(
-                    title: const Text('Rejected (because of incorrect amount of downpayment)'),
+                    title: Text('Rejected (because of incorrect amount of downpayment)', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                     value: 'incorrect_downpayment',
                     groupValue: selectedReason,
                     onChanged: (String? value) {
@@ -315,7 +317,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                     },
                   ),
                   RadioListTile<String>(
-                    title: const Text('Rejected (because of fake receipt/no downpayment/payment)'),
+                    title: Text('Rejected (because of fake receipt/no downpayment/payment)', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                     value: 'fake_receipt',
                     groupValue: selectedReason,
                     onChanged: (String? value) {
@@ -331,11 +333,11 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('CANCEL'),
+              child: Text('CANCEL', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(selectedReason),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red),
               child: const Text('REJECT'),
             ),
           ],
@@ -406,7 +408,8 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Payment Receipt'),
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+          title: Text('Payment Receipt', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
           content: SizedBox(
             width: 300,
             height: 400,
@@ -420,7 +423,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text('Close', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             ),
           ],
         ),
@@ -443,9 +446,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
+                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                 fontSize: 12,
               ),
             ),
@@ -453,9 +456,10 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           Expanded(
             child: Text(
               displayValue,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
           ),
@@ -626,6 +630,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -633,15 +638,15 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           children: [
             Row(
             children: [
-              const Text(
+              Text(
                 'Booking Requests',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
               ),
               const Spacer(),
               // Refresh button
               IconButton(
                 onPressed: _refreshData,
-                icon: const Icon(Icons.refresh),
+                icon: Icon(Icons.refresh, color: widget.isDarkMode ? Colors.white : Colors.black),
                 tooltip: 'Refresh',
               ),
             ],
@@ -660,13 +665,13 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.inbox, size: 60, color: Colors.grey),
+                    Icon(Icons.inbox, size: 60, color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                     const SizedBox(height: 16),
                     Text(
                       _searchQuery.isNotEmpty
                           ? "No requests match your filters"
                           : "No pending requests",
-                      style: const TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(fontSize: 18, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                     ),
                     if (_searchQuery.isNotEmpty)
                       TextButton(
@@ -723,6 +728,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       elevation: 2,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -732,7 +738,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => BookingDetailScreen(booking: booking),
+                              builder: (context) => BookingDetailScreen(booking: booking, isDarkMode: widget.isDarkMode),
                             ),
                           );
                           
@@ -755,7 +761,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                     height: 50,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(25),
-                                      border: Border.all(color: Colors.grey.shade300),
+                                      border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(25),
@@ -767,9 +773,10 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                   Expanded(
                                     child: Text(
                                       facilityName,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
+                                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                                       ),
                                     ),
                                   ),
@@ -780,7 +787,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                       height: 60,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                                       ),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
@@ -791,12 +798,12 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                                 errorBuilder: (context, error, stackTrace) {
                                                   return Container(
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade100,
+                                                      color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
-                                                    child: const Icon(
+                                                    child: Icon(
                                                       Icons.receipt_long,
-                                                      color: Colors.grey,
+                                                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                                       size: 24,
                                                     ),
                                                   );
@@ -808,12 +815,12 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                                 errorBuilder: (context, error, stackTrace) {
                                                   return Container(
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade100,
+                                                      color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
-                                                    child: const Icon(
+                                                    child: Icon(
                                                       Icons.receipt_long,
-                                                      color: Colors.grey,
+                                                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                                       size: 24,
                                                     ),
                                                   );
@@ -826,12 +833,12 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                       width: 60,
                                       height: 60,
                                       decoration: BoxDecoration(
-                                        color: Colors.grey.shade200,
+                                        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.receipt_long,
-                                        color: Colors.grey,
+                                        color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                         size: 24,
                                       ),
                                     ),
@@ -844,18 +851,18 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
+                                    color: widget.isDarkMode ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade100,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.receipt, size: 16, color: Colors.green.shade700),
+                                      Icon(Icons.receipt, size: 16, color: widget.isDarkMode ? Colors.green.shade400 : Colors.green.shade700),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Receipt Attached',
                                         style: TextStyle(
-                                          color: Colors.green.shade700,
+                                          color: widget.isDarkMode ? Colors.green.shade400 : Colors.green.shade700,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -896,7 +903,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                       final result = await Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => BookingDetailScreen(booking: booking),
+                                          builder: (context) => BookingDetailScreen(booking: booking, isDarkMode: widget.isDarkMode),
                                         ),
                                       );
                                       
@@ -907,8 +914,8 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                     icon: const Icon(Icons.visibility, size: 16),
                                     label: const Text('Details', style: TextStyle(fontSize: 12)),
                                     style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.red,
-                                      side: const BorderSide(color: Colors.red),
+                                      foregroundColor: widget.isDarkMode ? Colors.red.shade400 : Colors.red,
+                                      side: BorderSide(color: widget.isDarkMode ? Colors.red.shade400 : Colors.red),
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       minimumSize: const Size(0, 36),
                                     ),
@@ -919,7 +926,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                     icon: const Icon(Icons.check, size: 16),
                                     label: const Text('Approve', style: TextStyle(fontSize: 12)),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
+                                      backgroundColor: widget.isDarkMode ? Colors.green.shade700 : Colors.green,
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       minimumSize: const Size(0, 36),
@@ -931,7 +938,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                                     icon: const Icon(Icons.close, size: 16),
                                     label: const Text('Reject', style: TextStyle(fontSize: 12)),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       minimumSize: const Size(0, 36),
@@ -957,7 +964,7 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     // Get discount rate and determine discount type
     double discountRate = 0.0;
     String discountType = 'No Discount';
-    Color tagColor = Colors.grey;
+    Color tagColor = widget.isDarkMode ? Colors.grey.shade600 : Colors.grey;
     
     // Get user email from booking data
     String userEmail = booking['user_email'] ?? 'unknown';
@@ -1077,9 +1084,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
       padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1087,9 +1094,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
           // Header with hamburger menu
           Row(
             children: [
-              const Text(
+              Text(
                 'Filter Requests',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
               ),
               const Spacer(),
               // Hamburger menu icon
@@ -1102,12 +1109,12 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
                     Icons.menu,
-                    color: Colors.blue,
+                    color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                     size: 18,
                   ),
                 ),
@@ -1133,9 +1140,9 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.white,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1257,16 +1264,16 @@ class _OfficialBookingRequestsTabState extends State<OfficialBookingRequestsTab>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: widget.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 2),
           DropdownButton<String>(
             value: currentValue,
             isExpanded: true,
-            style: const TextStyle(fontSize: 12, color: Colors.black),
+            style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black),
             items: options.map((option) => 
               DropdownMenuItem(
                 value: option,
-                child: Text(option, style: const TextStyle(fontSize: 12, color: Colors.black)),
+                child: Text(option, style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black)),
               )
             ).toList(),
             onChanged: onChanged,

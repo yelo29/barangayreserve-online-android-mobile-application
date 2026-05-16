@@ -3,7 +3,8 @@ import '../services/auth_api_service.dart';
 import '../services/api_service.dart';
 
 class OfficialAccountSettingsScreen extends StatefulWidget {
-  const OfficialAccountSettingsScreen({super.key});
+  final bool isDarkMode;
+  const OfficialAccountSettingsScreen({super.key, this.isDarkMode = false});
 
   @override
   State<OfficialAccountSettingsScreen> createState() => _OfficialAccountSettingsScreenState();
@@ -108,9 +109,10 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: const Text('Account Settings'),
-        backgroundColor: Colors.red,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -120,6 +122,7 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
           children: [
             // User Info Section
             Card(
+              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 2,
               child: Padding(
@@ -127,11 +130,12 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Account Information',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -139,24 +143,25 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                     // Gmail Display
                     Row(
                       children: [
-                        const Icon(Icons.email, color: Colors.grey),
+                        Icon(Icons.email, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Gmail Address',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   fontSize: 12,
                                 ),
                               ),
                               Text(
                                 _currentUserEmail ?? 'Loading...',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
+                                  color: widget.isDarkMode ? Colors.white : Colors.black87,
                                 ),
                               ),
                             ],
@@ -169,26 +174,29 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                     // Name Update Section
                     Row(
                       children: [
-                        const Icon(Icons.person, color: Colors.grey),
+                        Icon(Icons.person, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Full Name',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   fontSize: 12,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _nameController,
+                                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your full name',
+                                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -206,26 +214,29 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                     // Contact Number Section
                     Row(
                       children: [
-                        const Icon(Icons.phone, color: Colors.grey),
+                        Icon(Icons.phone, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Contact Number',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   fontSize: 12,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _contactController,
+                                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your contact number',
+                                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -247,7 +258,7 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                       child: ElevatedButton(
                         onPressed: _isUpdating ? null : _updateProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -275,6 +286,7 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
             
             // Customer Service Section
             Card(
+              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 2,
               child: Padding(
@@ -282,20 +294,21 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Customer Service Information',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 16),
                     
                     ListTile(
-                      leading: const Icon(Icons.phone, color: Colors.red),
-                      title: const Text('Your Contact Number'),
-                      subtitle: Text(_contactController.text.isEmpty ? 'Not set' : _contactController.text),
-                      trailing: const Icon(Icons.edit, size: 16),
+                      leading: Icon(Icons.phone, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red),
+                      title: Text('Your Contact Number', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+                      subtitle: Text(_contactController.text.isEmpty ? 'Not set' : _contactController.text, style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600)),
+                      trailing: Icon(Icons.edit, size: 16, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                       onTap: () {
                         // Focus on contact number field
                         FocusScope.of(context).requestFocus(FocusNode());
@@ -332,9 +345,9 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                     const Divider(),
                     
                     ListTile(
-                      leading: const Icon(Icons.info, color: Colors.blue),
+                      leading: const Icon(Icons.info, color: Colors.red),
                       title: const Text('Note'),
-                      subtitle: const Text('Residents will see your contact number for customer service inquiries'),
+                      subtitle: Text('Residents will see your contact number for customer service inquiries', style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
@@ -359,7 +372,8 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Privacy Policy'),
+                          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                          title: Text('Privacy Policy', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
                           content: SingleChildScrollView(
                             child: Text(
                               'As barangay officials, you are entrusted with managing public services and protecting resident information under Philippine laws. This policy outlines your responsibilities and enhanced privacy standards required when accessing the Facility Reservation System.\n\n'
@@ -434,12 +448,13 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
             '- Continuous privacy training and improvement\n'
             '\nBy accepting an official position, you commit to protecting resident privacy under Republic Act No. 10173, maintaining highest ethical standards under Civil Service laws, and serving our community with integrity and transparency as required by the Local Government Code.\n\n'
             'Thank you for your commitment to protecting our community\'s privacy while delivering excellent public service!',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87),
                             ),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Close'),
+                              child: Text('Close', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                             ),
                           ],
                         ),
@@ -457,7 +472,8 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Help & Support'),
+                          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                          title: Text('Help & Support', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
                           content: SingleChildScrollView(
                             child: Text(
                               'Barangay Reserve Official App - Help & Support\n\n'
@@ -558,12 +574,13 @@ class _OfficialAccountSettingsScreenState extends State<OfficialAccountSettingsS
             '- Q: When should I contact system administrator?\n'
             '  A: For critical system errors, security breaches, data corruption\n'
             '\nThank you for your dedication to public service and community development!',
+                              style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87),
                             ),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Close'),
+                              child: Text('Close', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                             ),
                           ],
                         ),

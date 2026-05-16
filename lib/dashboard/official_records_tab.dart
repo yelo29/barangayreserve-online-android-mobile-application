@@ -48,10 +48,11 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
               final records = snapshot.data?.docs ?? [];
 
               if (records.isEmpty) {
+                final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
                 return Center(
                   child: Text(
                     'No $_selectedStatus bookings found',
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(fontSize: 16, color: isDarkMode ? Colors.grey.shade600 : Colors.grey),
                   ),
                 );
               }
@@ -60,22 +61,24 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
                 itemCount: records.length,
                 itemBuilder: (context, index) {
                   final booking = records[index].data() as Map<String, dynamic>;
+                  final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
 
                   return Card(
+                    color: isDarkMode ? Colors.grey.shade800 : Colors.white,
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     child: ListTile(
                       title: Text(
                         booking['fullName'] ?? 'Unknown',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Facility: ${booking['facilityName'] ?? 'N/A'}'),
-                          Text('Date: ${booking['date'] ?? 'N/A'}'),
-                          Text('Time: ${booking['timeslot'] ?? 'N/A'}'),
+                          Text('Facility: ${booking['facilityName'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700)),
+                          Text('Date: ${booking['date'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700)),
+                          Text('Time: ${booking['timeslot'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700)),
                           if (_selectedStatus == 'rejected')
-                            Text('Reason: ${booking['rejectionReason'] ?? 'N/A'}'),
+                            Text('Reason: ${booking['rejectionReason'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.red.shade300 : Colors.red)),
                         ],
                       ),
                       trailing: _getStatusIcon(_selectedStatus),
@@ -92,6 +95,7 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
   }
 
   Widget _statusButton(String status, String label) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
     final isSelected = _selectedStatus == status;
     return Expanded(
       child: ElevatedButton(
@@ -101,9 +105,9 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
           });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue[800] : Colors.white,
+          backgroundColor: isSelected ? Colors.blue[800] : (isDarkMode ? Colors.grey.shade700 : Colors.white),
           foregroundColor: isSelected ? Colors.white : Colors.blue[800],
-          side: BorderSide(color: Colors.blue[200]!),
+          side: BorderSide(color: isDarkMode ? Colors.grey.shade600 : Colors.blue[200]!),
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
         child: Text(
@@ -115,6 +119,7 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
   }
 
   Widget _getStatusIcon(String status) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
     switch (status.toLowerCase()) {
       case 'approved':
         return const Icon(Icons.check_circle, color: Colors.green);
@@ -123,7 +128,7 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
       case 'completed':
         return const Icon(Icons.done_all, color: Colors.blue);
       default:
-        return const Icon(Icons.help, color: Colors.grey);
+        return Icon(Icons.help, color: isDarkMode ? Colors.grey.shade600 : Colors.grey);
     }
   }
 
@@ -131,7 +136,9 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
         return Dialog(
+          backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.white,
           insetPadding: const EdgeInsets.all(16),
           child: Container(
             width: double.maxFinite,
@@ -145,70 +152,71 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Booking Record Details',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close, color: isDarkMode ? Colors.white : Colors.black87),
                         ),
                       ],
                     ),
-                    const Divider(),
+                    Divider(color: isDarkMode ? Colors.grey.shade700 : Colors.grey),
                     const SizedBox(height: 8),
 
                     // Resident Details
-                    const Text(
+                    Text(
                       'Resident Information',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    Text('Name: ${booking['fullName'] ?? 'N/A'}'),
-                    Text('Contact: ${booking['contactNumber'] ?? 'N/A'}'),
-                    Text('Address: ${booking['address'] ?? 'N/A'}'),
+                    Text('Name: ${booking['fullName'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Contact: ${booking['contactNumber'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Address: ${booking['address'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                     const SizedBox(height: 16),
 
                     // Booking Details
-                    const Text(
+                    Text(
                       'Booking Information',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    Text('Facility: ${booking['facilityName'] ?? 'N/A'}'),
-                    Text('Date: ${booking['date'] ?? 'N/A'}'),
-                    Text('Timeslot: ${booking['timeslot'] ?? 'N/A'}'),
-                    Text('Status: ${booking['status']?.toUpperCase() ?? 'N/A'}'),
+                    Text('Facility: ${booking['facilityName'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Date: ${booking['date'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Timeslot: ${booking['timeslot'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Status: ${booking['status']?.toUpperCase() ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                     const SizedBox(height: 16),
 
                     // Payment Information
-                    const Text(
+                    Text(
                       'Payment Details',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    Text('Reference Number: ${booking['referenceNumber'] ?? 'N/A'}'),
-                    Text('Amount Paid: ₱${booking['amountPaid'] ?? 'N/A'}'),
+                    Text('Reference Number: ${booking['referenceNumber'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Amount Paid: ₱${booking['amountPaid'] ?? 'N/A'}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
                     const SizedBox(height: 8),
 
                     // Dates
-                    const Text(
+                    Text(
                       'Important Dates',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDarkMode ? Colors.white : Colors.black87),
                     ),
                     const SizedBox(height: 8),
-                    Text('Submitted: ${_formatDate(booking['submittedDate'])}'),
-                    Text('Reviewed: ${_formatDate(booking['reviewedDate'])}'),
+                    Text('Submitted: ${_formatDate(booking['submittedDate'])}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
+                    Text('Reviewed: ${_formatDate(booking['reviewedDate'])}', style: TextStyle(color: isDarkMode ? Colors.grey.shade300 : Colors.black87)),
 
                     // Rejection reason if applicable
                     if (booking['status'] == 'rejected' && booking['rejectionReason'] != null) ...[
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Rejection Reason',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
                       ),
@@ -216,13 +224,13 @@ class _OfficialRecordsTabState extends State<OfficialRecordsTab> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          border: Border.all(color: Colors.red[200]!),
+                          color: isDarkMode ? Colors.red.shade900 : Colors.red[50],
+                          border: Border.all(color: isDarkMode ? Colors.red.shade700 : Colors.red[200]!),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          booking['rejectionReason'],
-                          style: const TextStyle(color: Colors.red[800]),
+                          booking['rejectionReason'] ?? 'N/A',
+                          style: TextStyle(color: isDarkMode ? Colors.red.shade300 : Colors.red[900]),
                         ),
                       ),
                     ],

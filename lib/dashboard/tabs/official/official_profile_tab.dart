@@ -6,8 +6,9 @@ import '../../../services/auto_refresh_service.dart';
 
 class OfficialProfileTab extends StatefulWidget {
   final Function(BuildContext) onLogout;
+  final bool isDarkMode;
   
-  const OfficialProfileTab({super.key, required this.onLogout});
+  const OfficialProfileTab({super.key, required this.onLogout, this.isDarkMode = false});
 
   @override
   State<OfficialProfileTab> createState() => _OfficialProfileTabState();
@@ -63,25 +64,28 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return Container(
+      color: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'Account Settings',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: widget.isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
               const Spacer(),
               // Refresh button
               IconButton(
                 onPressed: _refreshData,
-                icon: const Icon(Icons.refresh),
+                icon: Icon(Icons.refresh, color: widget.isDarkMode ? Colors.white : Colors.black),
                 tooltip: 'Refresh',
               ),
             ],
@@ -91,6 +95,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
           Container(
             constraints: const BoxConstraints(minHeight: 100),
             child: Card(
+              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 2,
               child: InkWell(
@@ -98,7 +103,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const OfficialAccountSettingsScreen(),
+                      builder: (context) => OfficialAccountSettingsScreen(isDarkMode: widget.isDarkMode),
                     ),
                   );
                 },
@@ -108,8 +113,8 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
                     children: [
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: Colors.pink.shade100,
-                        child: Icon(Icons.admin_panel_settings, color: Colors.red.shade700, size: 28),
+                        backgroundColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.pink.shade100,
+                        child: Icon(Icons.admin_panel_settings, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700, size: 28),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -119,10 +124,10 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
                           children: [
                             Text(
                               _currentUser?['full_name'] ?? 'Loading...',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: Colors.black87,
+                                color: widget.isDarkMode ? Colors.white : Colors.black87,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -131,7 +136,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
                             Text(
                               _currentUser?['email'] ?? 'Loading...',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                 fontSize: 13,
                               ),
                             ),
@@ -142,7 +147,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: Colors.grey.shade400,
+                        color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
                       ),
                     ],
                   ),
@@ -163,7 +168,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
               icon: const Icon(Icons.logout),
               label: const Text('Logout'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -174,6 +179,7 @@ class _OfficialProfileTabState extends State<OfficialProfileTab> with AutoRefres
           ),
         ],
       ),
+    ),
     );
   }
 }

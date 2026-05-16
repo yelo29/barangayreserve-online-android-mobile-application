@@ -13,11 +13,13 @@ import 'official_booking_form_screen.dart';
 class FacilityCalendarScreen extends StatefulWidget {
   final Map<String, dynamic> facility;
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
 
   const FacilityCalendarScreen({
     super.key,
     required this.facility,
     this.userData,
+    this.isDarkMode = false,
   });
 
   @override
@@ -355,7 +357,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.facility['name'] ?? 'Facility Calendar'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -367,11 +369,11 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                         spreadRadius: 2,
                         blurRadius: 8,
                         offset: const Offset(0, 4),
@@ -383,16 +385,16 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                     children: [
                       Text(
                         widget.facility['name'] ?? 'Facility Name',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         widget.facility['description'] ?? 'Facility description',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600]),
                       ),
                       Row(
                         children: [
@@ -421,12 +423,12 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                       ),
                       if ((widget.facility['amenities']?.toString() ?? '').isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Amenities:',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: widget.isDarkMode ? Colors.white : Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -434,7 +436,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                           _formatAmenities(widget.facility['amenities']),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -447,11 +449,11 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                   child: Container(
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                           spreadRadius: 2,
                           blurRadius: 8,
                           offset: const Offset(0, 4),
@@ -464,7 +466,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
+                            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
@@ -472,14 +474,14 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today, color: Colors.blue.shade700),
+                              Icon(Icons.calendar_today, color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700),
                               const SizedBox(width: 8),
                               Text(
                                 'Select a Date',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                  color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700,
                                 ),
                               ),
                             ],
@@ -503,7 +505,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -521,7 +523,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: widget.isDarkMode ? Colors.white : Colors.black87,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -632,7 +634,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
                 _navigateToBookingForm(selectedDate);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Proceed Anyway'),
@@ -660,6 +662,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
             facility: widget.facility,
             selectedDate: selectedDate,
             userData: _currentUser,
+            isDarkMode: widget.isDarkMode,
           ),
         ),
       );
@@ -672,6 +675,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with Au
             facility: widget.facility,
             selectedDate: selectedDate,
             userData: _currentUser,
+            isDarkMode: widget.isDarkMode,
           ),
         ),
       );

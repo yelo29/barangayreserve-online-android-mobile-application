@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'tabs/resident_home_tab.dart';
 import 'tabs/resident_bookings_tab.dart';
 import 'tabs/resident_profile_tab.dart';
+import '../services/theme_service.dart';
 
 class ResidentDashboard extends StatefulWidget {
   final Function(BuildContext) onLogout; // Callback for logging out
@@ -16,20 +17,29 @@ class ResidentDashboard extends StatefulWidget {
 class _ResidentDashboardState extends State<ResidentDashboard> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  final ThemeService _themeService = ThemeService();
+  bool _isDarkMode = false;
   
   @override
   void initState() {
     super.initState();
+    _themeService.addListener(() {
+      setState(() {
+        _isDarkMode = _themeService.isDarkMode;
+      });
+    });
+    _isDarkMode = _themeService.isDarkMode;
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      ResidentHomeTab(userData: widget.userData),
-      ResidentBookingsTab(userData: widget.userData),
+      ResidentHomeTab(userData: widget.userData, isDarkMode: _isDarkMode),
+      ResidentBookingsTab(userData: widget.userData, isDarkMode: _isDarkMode),
       ResidentProfileTab(
         userData: widget.userData,
         onLogout: widget.onLogout,
+        isDarkMode: _isDarkMode,
       ), 
     ];
 
@@ -52,8 +62,17 @@ class _ResidentDashboardState extends State<ResidentDashboard> {
           title: const Text("Resident Page"),
           automaticallyImplyLeading: false,
           elevation: 1,
-          backgroundColor: Colors.blue,
+          backgroundColor: _isDarkMode ? Colors.grey.shade900 : Colors.blue,
           foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
+              onPressed: () {
+                _themeService.toggleTheme();
+              },
+              tooltip: 'Toggle Dark Mode',
+            ),
+          ],
         ),
         body: PageView(
           controller: _pageController,
@@ -66,8 +85,9 @@ class _ResidentDashboardState extends State<ResidentDashboard> {
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: _isDarkMode ? Colors.blue.shade300 : Colors.blue,
+          unselectedItemColor: _isDarkMode ? Colors.grey.shade500 : Colors.grey,
+          backgroundColor: _isDarkMode ? Colors.grey.shade900 : Colors.white,
           onTap: (index) {
             _pageController.jumpToPage(index);
           },
@@ -88,7 +108,7 @@ class _ResidentDashboardState extends State<ResidentDashboard> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: _showTutorialDialog,
-          backgroundColor: Colors.orange,
+          backgroundColor: _isDarkMode ? Colors.grey.shade700 : Colors.orange,
           foregroundColor: Colors.white,
           mini: true,
           child: const Icon(Icons.help_outline),

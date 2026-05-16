@@ -6,8 +6,9 @@ import '../../../widgets/error_widget.dart';
 
 class ResidentBookingsTab extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
   
-  const ResidentBookingsTab({super.key, this.userData});
+  const ResidentBookingsTab({super.key, this.userData, this.isDarkMode = false});
 
   @override
   State<ResidentBookingsTab> createState() => _ResidentBookingsTabState();
@@ -212,7 +213,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -221,7 +222,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'My Bookings',
                     style: TextStyle(
                       fontSize: 24,
@@ -234,7 +235,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                     'Track your booking requests',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.blue[100],
+                      color: widget.isDarkMode ? Colors.grey.shade300 : Colors.blue[100],
                     ),
                   ),
                 ],
@@ -261,14 +262,14 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                               Icon(
                                 Icons.error_outline,
                                 size: 80,
-                                color: Colors.red[400],
+                                color: widget.isDarkMode ? Colors.red.shade400 : Colors.red[400],
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'Error loading bookings',
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: Colors.grey[600],
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -276,7 +277,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                                 _error!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[500],
+                                  color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[500],
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -286,7 +287,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('Retry'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -301,14 +302,14 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                                   Icon(
                                     Icons.book_online,
                                     size: 60,
-                                    color: Colors.grey[400],
+                                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[400],
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
                                     'No bookings yet',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.grey[600],
+                                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -316,7 +317,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                                     'Book a facility to get started',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[500],
+                                      color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[500],
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -325,7 +326,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                                     icon: const Icon(Icons.refresh, size: 16),
                                     label: const Text('Refresh', style: TextStyle(fontSize: 12)),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                                       foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     ),
@@ -376,11 +377,11 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -411,10 +412,10 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                 Expanded(
                   child: Text(
                     facilityName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: widget.isDarkMode ? Colors.white : Colors.black87,
                     ),
                   ),
                 ),
@@ -471,7 +472,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -481,16 +482,16 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                       'Purpose',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       booking['purpose'],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                       ),
                     ),
                   ],
@@ -504,23 +505,23 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(color: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.warning, size: 16, color: Colors.red.shade600),
+                        Icon(Icons.warning, size: 16, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600),
                         const SizedBox(width: 6),
                         Text(
                           'Booking Rejected',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
+                            color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700,
                           ),
                         ),
                       ],
@@ -594,7 +595,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                   'Booked on ${_formatDate(createdAt)}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[500],
                   ),
                 );
               },
@@ -615,14 +616,14 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
         ),
         const SizedBox(width: 8),
         Text(
           '$label:',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -630,9 +631,10 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.black87,
+              color: widget.isDarkMode ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ),
@@ -727,9 +729,9 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
       padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,9 +739,9 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
           // Header with hamburger menu
           Row(
             children: [
-              const Text(
+              Text(
                 'Filter Bookings',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black),
               ),
               const Spacer(),
               // Hamburger menu icon
@@ -752,12 +754,12 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Icon(
                     Icons.menu,
-                    color: Colors.blue,
+                    color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                     size: 18,
                   ),
                 ),
@@ -783,9 +785,9 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.white,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,13 +871,13 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(fontSize: 12, color: Colors.black),
-                  decoration: const InputDecoration(
+                  style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black),
+                  decoration: InputDecoration(
                     labelText: 'Search facility or email',
-                    labelStyle: TextStyle(fontSize: 12, color: Colors.black),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    labelStyle: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.search, size: 18, color: Colors.black),
+                    prefixIcon: Icon(Icons.search, size: 18, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -898,8 +900,8 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
                   });
                   _updateFilters();
                 },
-                icon: const Icon(Icons.clear_all, size: 16, color: Colors.black),
-                label: const Text('Clear', style: TextStyle(fontSize: 11, color: Colors.black)),
+                icon: Icon(Icons.clear_all, size: 16, color: widget.isDarkMode ? Colors.white : Colors.black),
+                label: Text('Clear', style: TextStyle(fontSize: 11, color: widget.isDarkMode ? Colors.white : Colors.black)),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
@@ -912,7 +914,7 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
           // Results count
           Text(
             'Showing ${_filteredBookings.length} of ${_bookings.length}',
-            style: const TextStyle(fontSize: 11, color: Colors.black),
+            style: TextStyle(fontSize: 11, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black),
           ),
         ],
       ),
@@ -925,16 +927,16 @@ class _ResidentBookingsTabState extends State<ResidentBookingsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: widget.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 2),
           DropdownButton<String>(
             value: currentValue,
             isExpanded: true,
-            style: const TextStyle(fontSize: 12, color: Colors.black),
+            style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black),
             items: options.map((option) => 
               DropdownMenuItem(
                 value: option,
-                child: Text(option, style: const TextStyle(fontSize: 12, color: Colors.black)),
+                child: Text(option, style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white : Colors.black)),
               )
             ).toList(),
             onChanged: onChanged,
