@@ -5,10 +5,12 @@ import '../../../screens/official_booking_form_screen.dart';
 
 class OfficialCalendarScreen extends StatefulWidget {
   final Map<String, dynamic> facility;
+  final bool isDarkMode;
 
   const OfficialCalendarScreen({
     super.key,
     required this.facility,
+    this.isDarkMode = false,
   });
 
   @override
@@ -130,8 +132,11 @@ class _OfficialCalendarScreenState extends State<OfficialCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text('${widget.facility['name']} Calendar'),
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red.shade800,
+        foregroundColor: Colors.white,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -150,6 +155,7 @@ class _OfficialCalendarScreenState extends State<OfficialCalendarScreen> {
                             facility: widget.facility,
                             selectedDate: selectedDate,
                             userData: _currentUser,
+                            isDarkMode: widget.isDarkMode,
                           ),
                         ),
                       );

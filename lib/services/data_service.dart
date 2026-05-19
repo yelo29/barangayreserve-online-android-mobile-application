@@ -1,19 +1,40 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
+import 'auto_refresh_service.dart';
 
 class DataService {
   // Get current user data from SharedPreferences
   static Future<Map<String, dynamic>?> getCurrentUserData() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // First try to get user data from JSON (Gmail auth method)
+    final userDataString = prefs.getString('user_data');
+    if (userDataString != null) {
+      try {
+        final userData = jsonDecode(userDataString);
+        print('✅ DataService: Retrieved user data from JSON');
+        return userData;
+      } catch (e) {
+        print('❌ DataService: Error parsing user_data JSON: $e');
+      }
+    }
+    
+    // Fallback to individual keys (legacy method)
     final userEmail = prefs.getString('user_email');
     final userRole = prefs.getString('user_role');
     final userId = prefs.getString('user_id');
     final userName = prefs.getString('user_name');
     
-    if (userEmail == null) return null;
+    if (userEmail == null) {
+      print('❌ DataService: No user email found in storage');
+      return null;
+    }
     
+    print('✅ DataService: Retrieved user data from individual keys');
     return {
       'email': userEmail,
       'role': userRole ?? 'resident',
@@ -57,7 +78,17 @@ class DataService {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return {'success': true, 'data': data};
+        print('🔍 DEBUG: DataService.fetchUserProfile response: $data');
+        
+        if (data['success'] == true && data.containsKey('user')) {
+          final userData = data['user'];
+          print('🔍 DEBUG: Extracted user data: $userData');
+          print('🔍 DEBUG: User data fields: ${userData.keys.toList()}');
+          print('🔍 DEBUG: Profile photo URL: ${userData['profile_photo_url']}');
+          return {'success': true, 'data': userData};
+        } else {
+          return {'success': false, 'error': 'Invalid response format'};
+        }
       } else {
         return {'success': false, 'error': 'Failed to fetch profile'};
       }
@@ -383,6 +414,13 @@ class DataService {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        
+        // Trigger auto-refresh if verification status was updated successfully and refresh_data is provided
+        if (data['success'] == true && data.containsKey('refresh_data')) {
+          print('🔄 Triggering auto-refresh for verification status update');
+          await AutoRefreshService().triggerAutoRefresh(data['refresh_data']);
+        }
+        
         return {
           'success': true,
           'message': data['message'] ?? 'Verification status updated successfully',
@@ -451,6 +489,12 @@ class DataService {
 
       // Add email to profile data for server identification
       profileData['email'] = userData['email'];
+      
+      print('🔍 DEBUG: Frontend profile update data:');
+      print('🔍 DEBUG: Full profileData: $profileData');
+      print('🔍 DEBUG: Email: ${profileData['email']}');
+      print('🔍 DEBUG: Has profile_photo_url: ${profileData.containsKey('profile_photo_url')}');
+      print('🔍 DEBUG: Profile photo URL length: ${profileData['profile_photo_url']?.length ?? 0}');
 
       final response = await http.put(
         Uri.parse('${AppConfig.baseUrl}/api/users/profile'),
@@ -460,6 +504,13 @@ class DataService {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        
+        // Trigger auto-refresh if profile was updated successfully and refresh_data is provided
+        if (data['success'] == true && data.containsKey('refresh_data')) {
+          print('🔄 Triggering auto-refresh for profile update');
+          await AutoRefreshService().triggerAutoRefresh(data['refresh_data']);
+        }
+        
         return {
           'success': true,
           'message': data['message'] ?? 'Profile updated successfully',

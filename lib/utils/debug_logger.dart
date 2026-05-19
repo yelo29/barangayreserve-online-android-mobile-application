@@ -36,8 +36,14 @@ class DebugLogger {
   }
 
   
-  static void api(String message) {
-    log(message, tag: 'API');
+  static void api(String message, {Object? error}) {
+    if (kDebugMode) {
+      final prefix = error != null ? '[API] ERROR: ' : '[API] ';
+      print('$prefix$message');
+      if (error != null) {
+        print('Error details: $error');
+      }
+    }
   }
 
   static void ui(String message) {

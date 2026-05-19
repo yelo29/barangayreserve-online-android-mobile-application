@@ -51,7 +51,7 @@ class MyBookingsPage extends StatelessWidget {
 
     print('🔍 MyBookingsPage: Building ListView with ${bookings.length} bookings');
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(8.0),
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final booking = bookings[index];
@@ -136,11 +136,11 @@ class MyBookingsPage extends StatelessWidget {
         }
 
         return Card(
-          elevation: 3,
-          margin: const EdgeInsets.only(bottom: 16.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 8.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -152,17 +152,17 @@ class MyBookingsPage extends StatelessWidget {
                       child: Text(
                         facilityName,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
                         ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
@@ -170,34 +170,34 @@ class MyBookingsPage extends StatelessWidget {
                         style: TextStyle(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 11,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 
                 // Date and Time
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
+                    Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
                     Text(
                       date,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey.shade700,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 12),
+                    Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
                     Text(
                       timeslot,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.grey.shade700,
                         fontWeight: FontWeight.w500,
                       ),
@@ -206,27 +206,27 @@ class MyBookingsPage extends StatelessWidget {
                 ),
                 
                 // Additional details
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.attach_money, size: 16, color: Colors.green.shade600),
-                    const SizedBox(width: 6),
+                    Icon(Icons.attach_money, size: 14, color: Colors.green.shade600),
+                    const SizedBox(width: 4),
                     Text(
                       'Rate: ₱$rate',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.green.shade700,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.person, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 12),
+                    Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         userEmail,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.grey.shade600,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -237,17 +237,17 @@ class MyBookingsPage extends StatelessWidget {
                 
                 // Purpose if available - show official override message for rejected bookings
                 if (statusText == 'REJECTED') ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Builder(
                     builder: (context) {
                       print('🔍🔥🔥 MyBookingsPage: Builder called for booking ID ${booking['id']}');
                       print('🔍🔥🔥 MyBookingsPage: Rejection reason: "${booking['rejection_reason']}"');
                       print('🔍🔥🔥 MyBookingsPage: Rejection reason type: ${booking['rejection_reason'].runtimeType}');
                       return Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: Colors.red.shade200),
                         ),
                         child: Column(
@@ -255,8 +255,8 @@ class MyBookingsPage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.warning, size: 16, color: Colors.red.shade600),
-                                const SizedBox(width: 6),
+                                Icon(Icons.warning, size: 14, color: Colors.red.shade600),
+                                const SizedBox(width: 4),
                                 Text(
                                   'Booking Rejected',
                                   style: TextStyle(
@@ -269,9 +269,9 @@ class MyBookingsPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              booking['rejection_reason'] ?? 'This date has been booked by Officials, refund of your payments will be done shortly, check your email or SMS for further details.',
+                              _getRejectionMessage(booking),
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: Colors.red.shade600,
                               ),
                             ),
@@ -281,16 +281,16 @@ class MyBookingsPage extends StatelessWidget {
                     },
                   ),
                 ] else if (booking['purpose'] != null && booking['purpose'].toString().isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.description, size: 16, color: Colors.grey.shade600),
-                      const SizedBox(width: 6),
+                      Icon(Icons.description, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           booking['purpose'].toString(),
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 11,
                             color: Colors.grey.shade600,
                             fontStyle: FontStyle.italic,
                           ),
@@ -307,5 +307,16 @@ class MyBookingsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _getRejectionMessage(Map<String, dynamic> booking) {
+    final rejectionReason = booking['rejection_reason']?.toString();
+    
+    if (rejectionReason == 'OFFICIAL_OVERLAP') {
+      return 'This booking was automatically rejected due to an official barangay event. We apologize for the inconvenience.';
+    }
+    
+    // Default message for other rejections
+    return booking['rejection_reason'] ?? 'This date has been booked by Officials, refund of your payments will be done shortly, check your email or SMS for further details.';
   }
 }

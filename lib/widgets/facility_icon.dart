@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'base64_image_widget.dart';
 
 class FacilityIcon extends StatelessWidget {
   final String iconName;
@@ -15,6 +16,18 @@ class FacilityIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color iconColor = color ?? Theme.of(context).primaryColor;
+
+    // Check if iconName is a base64 image (starts with data:image or is long base64 string)
+    if (iconName.startsWith('data:image') || (iconName.length > 100 && !iconName.contains(' '))) {
+      // It's a base64 image, display as image
+      return Base64ImageWidget(
+        base64Data: iconName,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(8),
+      );
+    }
 
     // Check if iconName is an emoji (contains non-ASCII characters)
     if (iconName.codeUnits.any((unit) => unit > 127)) {

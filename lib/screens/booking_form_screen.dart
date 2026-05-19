@@ -19,12 +19,14 @@ class BookingFormScreen extends StatefulWidget {
   final Map<String, dynamic> facility;
   final DateTime selectedDate;
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
 
   const BookingFormScreen({
     super.key,
     required this.facility,
     required this.selectedDate,
     this.userData,
+    this.isDarkMode = false,
   });
 
   @override
@@ -84,7 +86,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   // Helper function to get facility rate with fallback
   String _getFacilityRate(Map<String, dynamic> facility) {
-    final rate = facility['rate'] ?? facility['price'] ?? facility['base_rate'];
+    // Check the actual database fields first
+    final rate = facility['hourly_rate'] ?? facility['rate'] ?? facility['price'] ?? facility['base_rate'];
     if (rate != null) return rate.toString();
     
     final facilityName = facility['name']?.toString().toLowerCase() ?? '';
@@ -103,7 +106,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   // Helper function to get facility downpayment with fallback
   String _getFacilityDownpayment(Map<String, dynamic> facility) {
-    final downpayment = facility['downpayment'] ?? facility['downpayment_amount'];
+    // Check the actual database fields first
+    final downpayment = facility['downpayment_rate'] ?? facility['downpayment'] ?? facility['downpayment_amount'];
     if (downpayment != null) return downpayment.toString();
     
     final rate = double.tryParse(_getFacilityRate(facility)) ?? 200.0;
@@ -477,7 +481,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(16),
                         bottomRight: Radius.circular(16),
@@ -485,14 +489,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                        Icon(Icons.info_outline, color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Contact residents to coordinate refunds if you proceed with booking.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.blue.shade600,
+                              color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600,
                             ),
                           ),
                         ),
@@ -609,7 +613,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -618,12 +622,12 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                color: Colors.grey.shade100,
-                                child: const Center(
+                                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
+                                child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.broken_image, color: Colors.grey),
+                                      Icon(Icons.broken_image, color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
                                       Text('Receipt image not available'),
                                     ],
                                   ),
@@ -639,17 +643,17 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.receipt_long, color: Colors.grey.shade600, size: 16),
+                        Icon(Icons.receipt_long, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600, size: 16),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           'No receipt uploaded',
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                             fontSize: 12,
                           ),
                         ),
@@ -754,7 +758,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
         'user_email': widget.userData?['email'] ?? 'user@example.com',
         'date': widget.selectedDate.toIso8601String().split('T')[0],
         'timeslot': _selectedTimeSlot,
-        'total_amount': widget.facility['hourly_rate'] ?? widget.facility['rate'] ?? widget.facility['price'] ?? 0,
+        'total_amount': widget.facility['hourly_rate'] ?? widget.facility['rate'] ?? widget.facility['price'] ?? widget.facility['base_rate'] ?? 0,
         'status': _isOfficial ? 'approved' : 'pending', // Officials get auto-approved
       };
 
@@ -825,9 +829,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text('Book ${widget.facility['name']}'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -844,19 +849,19 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    border: Border.all(color: Colors.orange.shade200),
+                    color: widget.isDarkMode ? Colors.orange.shade900.withOpacity(0.3) : Colors.orange.shade50,
+                    border: Border.all(color: widget.isDarkMode ? Colors.orange.shade700 : Colors.orange.shade200),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange.shade700),
+                      Icon(Icons.warning, color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange.shade700),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'You already have a booking for this date. You can create additional bookings if needed.',
                           style: TextStyle(
-                            color: Colors.orange.shade700,
+                            color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange.shade700,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -868,6 +873,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
               // Facility Details Card
               Card(
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 elevation: 4,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
@@ -877,15 +883,15 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.business, color: Colors.blue.shade700, size: 28),
+                          Icon(Icons.business, color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700, size: 28),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               widget.facility['name'] ?? 'Facility Name',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: widget.isDarkMode ? Colors.white : Colors.black87,
                               ),
                             ),
                           ),
@@ -895,19 +901,19 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today, color: Colors.blue.shade700, size: 20),
+                            Icon(Icons.calendar_today, color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'Date: ${DateFormat.yMMMMd().format(widget.selectedDate)}',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.blue.shade700,
+                                color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700,
                               ),
                             ),
                           ],
@@ -941,9 +947,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
               // Personal Information Section - Only for residents
               if (!_isOfficial) ...[
-                _buildSectionHeader('Personal Information', Icons.person),
+                _buildSectionHeader('Personal Information*', Icons.person),
                 const SizedBox(height: 16),
                 Card(
+                  color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
@@ -953,7 +960,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         TextFormField(
                           controller: _nameController,
                           decoration: _buildInputDecoration(
-                            'Full Name',
+                            'Full Name*',
                             'Enter your full name',
                             Icons.person,
                           ),
@@ -968,7 +975,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         TextFormField(
                           controller: _contactController,
                           decoration: _buildInputDecoration(
-                            'Contact Number',
+                            'Contact Number*',
                             'Enter your contact number',
                             Icons.phone,
                           ),
@@ -984,7 +991,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         TextFormField(
                           controller: _addressController,
                           decoration: _buildInputDecoration(
-                            'Address',
+                            'Address*',
                             'Enter your complete address',
                             Icons.location_on,
                           ),
@@ -1000,7 +1007,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         TextFormField(
                           controller: _purposeController,
                           decoration: _buildInputDecoration(
-                            'Purpose of Booking',
+                            'Purpose of Booking*',
                             'Describe the purpose of your booking',
                             Icons.description,
                           ),
@@ -1020,31 +1027,38 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               ],
 
               // Time Slot Selection Section
-              _buildSectionHeader('Select Time Slot', Icons.access_time),
+              _buildSectionHeader('Select Time Slot*', Icons.access_time),
               const SizedBox(height: 16),
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_isLoadingTimeSlots)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 500),
-                          child: GridView.builder(
-                            shrinkWrap: true,
-                            physics: const ClampingScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.1,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: _timeSlots.length,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Time Slot Container (takes most space)
+                  Expanded(
+                    flex: 9,
+                    child: Card(
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_isLoadingTimeSlots)
+                              const Center(child: CircularProgressIndicator())
+                            else
+                              Container(
+                                constraints: const BoxConstraints(maxHeight: 600), // Increased from 500 to 600
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 1.1, // Increased from 1.1 to make buttons taller
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                                  itemCount: _timeSlots.length,
                             itemBuilder: (context, index) {
                               final timeSlot = _timeSlots[index];
                               final status = _timeSlotStatuses[timeSlot] ?? 'available';
@@ -1055,33 +1069,33 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
                               switch (status) {
                                 case 'approved':
-                                  backgroundColor = Colors.green.shade100;
-                                  textColor = Colors.green.shade700;
+                                  backgroundColor = widget.isDarkMode ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade100;
+                                  textColor = widget.isDarkMode ? Colors.green.shade400 : Colors.green.shade700;
                                   isDisabled = true; // Approved bookings - untappable for residents, tappable for officials to see details
                                   statusIcon = Icons.check_circle;
                                   break;
                                 case 'pending':
-                                  backgroundColor = Colors.yellow.shade100;
-                                  textColor = Colors.orange.shade700;
+                                  backgroundColor = widget.isDarkMode ? Colors.orange.shade900.withOpacity(0.3) : Colors.yellow.shade100;
+                                  textColor = widget.isDarkMode ? Colors.orange.shade400 : Colors.orange.shade700;
                                   isDisabled = true; // Pending bookings - untappable for residents, tappable for officials to see details
                                   statusIcon = Icons.pending;
                                   break;
                                 case 'booked':
-                                  backgroundColor = Colors.grey.shade100; // Gray for booked slots by other residents
-                                  textColor = Colors.grey.shade700;
+                                  backgroundColor = widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100; // Gray for booked slots by other residents
+                                  textColor = widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700;
                                   isDisabled = true; // Booked slots - untappable for residents, tappable for officials to see details
                                   statusIcon = Icons.block;
                                   break;
                                 case 'competitive':
-                                  backgroundColor = Colors.red.shade50;
-                                  textColor = Colors.red.shade700;
+                                  backgroundColor = widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50;
+                                  textColor = widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700;
                                   isDisabled = true; // Competitive slots - untappable for residents
                                   statusIcon = Icons.priority_high;
                                   break;
                                 case 'available':
                                 default:
-                                  backgroundColor = Colors.white;
-                                  textColor = Colors.black87;
+                                  backgroundColor = widget.isDarkMode ? Colors.grey.shade700 : Colors.white;
+                                  textColor = widget.isDarkMode ? Colors.white : Colors.black87;
                                   isDisabled = false;
                                   statusIcon = Icons.access_time;
                               }
@@ -1111,8 +1125,8 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                     color: backgroundColor,
                                     border: Border.all(
                                       color: _selectedTimeSlot == timeSlot
-                                          ? Colors.blue
-                                          : Colors.grey.shade300,
+                                          ? (widget.isDarkMode ? Colors.blue.shade400 : Colors.blue)
+                                          : (widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                                       width: _selectedTimeSlot == timeSlot ? 2 : 1,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
@@ -1137,10 +1151,10 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                             fontWeight: _selectedTimeSlot == timeSlot
                                                 ? FontWeight.bold
                                                 : FontWeight.normal,
-                                            fontSize: 10,
+                                            fontSize: 12, // Increased from 10 to 12
                                           ),
                                           textAlign: TextAlign.center,
-                                          maxLines: 1,
+                                          maxLines: 2, // Increased from 1 to 2
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -1173,15 +1187,22 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             },
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
+                  ),
+                  
+                 
+                 
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // GCash Payment Information - Only for residents
               if (!_isOfficial) ...[
                 Card(
+                  color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                   elevation: 4,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
@@ -1193,12 +1214,12 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           children: [
                             Icon(Icons.payment, color: Colors.green, size: 24),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               'GCash Payment Guide',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: widget.isDarkMode ? Colors.white : Colors.black87,
                               ),
                             ),
                           ],
@@ -1209,7 +1230,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           width: double.infinity,
                           height: 200,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Column(
@@ -1223,7 +1244,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                   height: 120,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
+                                    color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withOpacity(0.1),
@@ -1277,7 +1298,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade600,
+                                  color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1287,7 +1308,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 'Tap to view full screen',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.blue,
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
@@ -1300,9 +1321,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
+                            color: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
+                            border: Border.all(color: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue.shade200),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1311,7 +1332,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 'Payment Instructions:',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                  color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700,
                                   fontSize: 14,
                                 ),
                               ),
@@ -1324,7 +1345,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 '5. Upload the receipt below',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.blue.shade600,
+                                  color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade600,
                                   height: 1.4,
                                 ),
                               ),
@@ -1341,7 +1362,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 icon: const Icon(Icons.help_outline),
                                 label: const Text('Detailed Guide'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue.shade600,
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -1353,7 +1374,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 icon: const Icon(Icons.account_balance_wallet),
                                 label: const Text('Open GCash'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade600,
+                                  backgroundColor: widget.isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -1374,16 +1395,19 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
-                    'Payment receipt is required to complete booking',
+                    '!Payment receipt is required to complete booking\n'
+                    '!Please upload a clear photo of your payment receipt\n'
+                    '!Before submitting your booking request, make sure to fill out personal information first',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.red.shade600,
+                      color: widget.isDarkMode ? Colors.red.shade300 : Colors.red.shade600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Card(
+                  color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: Padding(
@@ -1400,9 +1424,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                             width: double.infinity,
                             height: 150,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                              border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300, style: BorderStyle.solid),
                               borderRadius: BorderRadius.circular(8),
-                              color: Colors.grey.shade50,
+                              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
                             ),
                             child: _receiptImage != null
                                 ? Stack(
@@ -1424,13 +1448,13 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                 : Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.cloud_upload, size: 48, color: Colors.grey.shade400),
+                                      Icon(Icons.cloud_upload, size: 48, color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400),
                                       const SizedBox(height: 8),
                                       Text(
                                         'Tap to upload receipt *',
                                         style: TextStyle(
                                           fontSize: 16,
-                                          color: Colors.grey.shade600,
+                                          color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1439,7 +1463,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                                         'Required for booking submission',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.red.shade600,
+                                          color: widget.isDarkMode ? Colors.red.shade300 : Colors.red.shade600,
                                         ),
                                       ),
                                     ],
@@ -1459,7 +1483,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitBooking,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade600,
+                    backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue.shade600,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -1496,14 +1520,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: Colors.blue.shade700, size: 24),
+        Icon(icon, color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700, size: 24),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
       ],
@@ -1514,17 +1538,19 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.blue.shade700),
+      labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+      hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+      prefixIcon: Icon(icon, color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
+        borderSide: BorderSide(color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue.shade700, width: 2),
       ),
       filled: true,
-      fillColor: Colors.grey.shade50,
+      fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade50,
     );
   }
 
@@ -1542,14 +1568,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 20, color: widget.isDarkMode ? color.withOpacity(0.8) : Colors.grey.shade600),
+          const SizedBox(width: 12),
           Text(
-            label,
+            '$label:',
             style: TextStyle(
               fontSize: 14,
-              color: color,
               fontWeight: FontWeight.w500,
+              color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
             ),
           ),
         ],
@@ -1562,14 +1588,14 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey.shade600),
+          Icon(icon, size: 20, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
           const SizedBox(width: 12),
           Text(
             '$label:',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
+              color: widget.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
             ),
           ),
           const SizedBox(width: 8),
@@ -1579,7 +1605,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
               textAlign: TextAlign.right,
             ),
@@ -1595,6 +1621,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
           child: Container(
             padding: const EdgeInsets.all(20),
             constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
@@ -1613,6 +1640,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1621,26 +1649,26 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '📱 Getting Started:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: widget.isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '• Make sure you have GCash app installed\n• Ensure you have sufficient balance\n• Have your MPIN ready',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '🔍 Detailed Steps:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: widget.isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1653,7 +1681,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                 _buildDetailedStep('7', 'Enter your MPIN to complete'),
                 _buildDetailedStep('8', 'Screenshot the payment confirmation'),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   '⚠️ Important Notes:',
                   style: TextStyle(
                     fontSize: 16,
@@ -1662,9 +1690,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '• Payment is non-refundable\n• Keep the payment confirmation screenshot\n• Upload the receipt in the form below\n• Contact support if payment fails',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -1672,7 +1700,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
+                      backgroundColor: widget.isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -1705,9 +1733,9 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
           Expanded(
             child: Text(
               description,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.black87,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
               ),
             ),
           ),
@@ -1717,37 +1745,28 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
   }
 
   // Open GCash app or Play Store
-  void _openGCashApp() async {
-    const gcashUrl = 'gcash://';
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.globe.gcash.android';
+  Future<void> _openGCashApp() async {
+    // Use the gcash:// scheme to trigger the app
+    final Uri gcashUri = Uri.parse("gcash://");
     
     try {
-      // Try to open GCash app first
-      final uri = Uri.parse(gcashUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Check if the app is installed
+      if (await canLaunchUrl(gcashUri)) {
+        await launchUrl(
+          gcashUri, 
+          mode: LaunchMode.externalApplication, // This forces Android to open the native app
+        );
       } else {
-        // Fallback to Play Store
-        final playStoreUri = Uri.parse(playStoreUrl);
-        if (await canLaunchUrl(playStoreUri)) {
-          await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Could not open GCash or Play Store'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
+        // If GCash is not installed, redirect them to the Play Store
+        final Uri playStoreUri = Uri.parse("market://details?id=com.globe.gcash.android");
+        await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      print('Error opening GCash: $e');
+      print("Could not launch GCash: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening GCash: $e'),
+            content: Text('Could not open GCash: $e'),
             backgroundColor: Colors.red,
           ),
         );

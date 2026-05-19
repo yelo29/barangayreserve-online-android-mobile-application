@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../services/data_service.dart';
 import '../services/auth_api_service.dart';
+import '../services/auto_refresh_service.dart';
 import '../widgets/enhanced_calendar.dart';
 import '../widgets/loading_widget.dart';
 import '../utils/debug_logger.dart';
@@ -12,18 +13,20 @@ import 'official_booking_form_screen.dart';
 class FacilityCalendarScreen extends StatefulWidget {
   final Map<String, dynamic> facility;
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
 
   const FacilityCalendarScreen({
     super.key,
     required this.facility,
     this.userData,
+    this.isDarkMode = false,
   });
 
   @override
   State<FacilityCalendarScreen> createState() => _FacilityCalendarScreenState();
 }
 
-class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
+class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> with AutoRefreshMixin {
   bool _isLoading = true;
   Map<String, dynamic>? _currentUser;
   final AuthApiService _authApiService = AuthApiService.instance;
@@ -39,7 +42,8 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
 
   // Helper function to get facility rate with fallback
   String _getFacilityRate(Map<String, dynamic> facility) {
-    final rate = facility['rate'] ?? facility['price'] ?? facility['base_rate'];
+    // Check the actual database fields first
+    final rate = facility['hourly_rate'] ?? facility['rate'] ?? facility['price'] ?? facility['base_rate'];
     if (rate != null) return rate.toString();
     
     final facilityName = facility['name']?.toString().toLowerCase() ?? '';
@@ -58,7 +62,8 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
 
   // Helper function to get facility downpayment with fallback
   String _getFacilityDownpayment(Map<String, dynamic> facility) {
-    final downpayment = facility['downpayment'] ?? facility['downpayment_amount'];
+    // Check the actual database fields first
+    final downpayment = facility['downpayment_rate'] ?? facility['downpayment'] ?? facility['downpayment_amount'];
     if (downpayment != null) return downpayment.toString();
     
     final rate = double.tryParse(_getFacilityRate(facility)) ?? 200.0;
@@ -105,6 +110,17 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
+    // Initialize auto-refresh for calendar view
+    initAutoRefresh('calendar_view');
+    
+    // Register refresh callback for booking data updates
+    registerRefreshCallback(() {
+      if (mounted) {
+        _loadBookingData();
+      }
+    });
+    
     // Refresh data when tab becomes visible again
     if (mounted) {
       _loadBookingData();
@@ -115,16 +131,15 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
     try {
       // Initialize current user data from widget.userData
       _currentUser = widget.userData;
-      print('🔍 FacilityCalendarScreen._loadBookingData - fetching bookings for facility: ${widget.facility['id']} (${widget.facility['name']})');
-      print('🔍 Current user email: ${_currentUser?['email']}');
-      print('🔍 Current user role: ${_currentUser?['role']}');
+      DebugLogger.api('Loading bookings for facility: ${widget.facility['id']} (${widget.facility['name']})');
+      DebugLogger.api('Current user: ${_currentUser?['email']}, role: ${_currentUser?['role']}');
       
       // Use DataService for consistent data fetching (residents only see their own bookings)
       final bookingsResponse = await DataService.fetchBookings();
       
       if (bookingsResponse['success'] == true) {
         final List<Map<String, dynamic>> allBookings = bookingsResponse['data'] ?? [];
-        print('🔍 Received ${allBookings.length} total bookings from DataService');
+        DebugLogger.api('Received ${allBookings.length} total bookings from DataService');
         
         // Separate bookings by type and status
         final List<dynamic> pending = allBookings
@@ -144,14 +159,12 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                 final bool isOfficialFlag = booking['is_official_booking'] == true;
                 final bool isApproved = booking['status'] == 'approved';
                 final bool isOfficialBooking = isOfficialEmail || isOfficialFlag;
-                print('🔍 Checking booking: user=$userEmail, official=$isOfficialBooking, approved=$isApproved');
+                DebugLogger.api('Booking check: user=$userEmail, official=$isOfficialBooking, approved=$isApproved');
                 return isOfficialBooking && isApproved;
             })
             .toList();
 
-        print('🔍 FacilityCalendarScreen - pending bookings total: ${pending.length}');
-        print('🔍 FacilityCalendarScreen - approved bookings total: ${approved.length}');
-        print('🔍 FacilityCalendarScreen - official bookings total: ${officialBookings.length}');
+        DebugLogger.api('Booking totals - pending: ${pending.length}, approved: ${approved.length}, official: ${officialBookings.length}');
 
         // Filter bookings for this specific facility
         Map<String, List<Map<String, dynamic>>> pendingFiltered = {};
@@ -166,7 +179,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
             final date = booking['date'] ?? booking['booking_date'];
             if (date != null) {
               pendingFiltered.putIfAbsent(date, () => []).add(Map<String, dynamic>.from(booking));
-              print('🔍 Added user pending booking for date: $date');
+              DebugLogger.api('Added user pending booking for date: $date');
             }
           }
         }
@@ -187,27 +200,27 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
               final date = booking['date'] ?? booking['booking_date'];
               if (date != null) {
                 approvedFiltered.putIfAbsent(date, () => []).add(Map<String, dynamic>.from(booking));
-                print('🔍 Added approved booking for date: $date by ${isOfficialBooking ? 'OFFICIAL' : 'USER'}');
+                DebugLogger.api('Added approved booking for date: $date by ${isOfficialBooking ? 'OFFICIAL' : 'USER'}');
               }
             }
           }
         }
 
         // Filter official bookings (for locking)
-        print('🔍🔥🔥 Processing official bookings for calendar locking...');
+        DebugLogger.api('Processing official bookings for calendar locking');
         for (final booking in officialBookings) {
           final bookingFacilityId = booking['facilityId'] ?? booking['facility_id'];
-          print('🔍🔥🔥 Checking official booking: ID ${booking['id']}, Facility: $bookingFacilityId, Target: ${widget.facility['id']}');
+          DebugLogger.api('Checking official booking: ID ${booking['id']}, Facility: $bookingFacilityId, Target: ${widget.facility['id']}');
           if (bookingFacilityId.toString() == widget.facility['id'].toString()) {
             final date = booking['date'] ?? booking['booking_date'];
             if (date != null) {
               officialFiltered.putIfAbsent(date, () => []).add(Map<String, dynamic>.from(booking));
-              print('🔍🔥🔥✅ ADDED official booking for date: $date by ${booking['user_email']} (ID: ${booking['id']})');
+              DebugLogger.success('Added official booking for date: $date by ${booking['user_email']} (ID: ${booking['id']})');
             } else {
-              print('🔍🔥🔥❌ SKIPPED official booking - no date: ${booking['id']}');
+              DebugLogger.warning('Skipped official booking - no date: ${booking['id']}');
             }
           } else {
-            print('🔍🔥🔥❌ SKIPPED official booking - wrong facility: ${booking['id']} (Facility: $bookingFacilityId vs Target: ${widget.facility['id']})');
+            DebugLogger.warning('Skipped official booking - wrong facility: ${booking['id']} (Facility: $bookingFacilityId vs Target: ${widget.facility['id']})');
           }
         }
 
@@ -221,14 +234,12 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
           });
         }
 
-        print('🔍 FacilityCalendarScreen - filtered pending for facility: ${_pendingBookings.length} dates');
-        print('🔍 FacilityCalendarScreen - filtered approved for facility: ${_approvedBookings.length} dates');
-        print('🔍 FacilityCalendarScreen - filtered official for facility: ${_officialBookings.length} dates');
+        DebugLogger.api('Filtered bookings for facility - pending: ${_pendingBookings.length} dates, approved: ${_approvedBookings.length} dates, official: ${_officialBookings.length} dates');
       } else {
         throw Exception(bookingsResponse['error'] ?? 'Failed to fetch bookings');
       }
     } catch (e) {
-      print('❌ FacilityCalendarScreen._loadBookingData - Error: $e');
+      DebugLogger.error('Error loading booking data', error: e);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -240,7 +251,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
   Map<String, String> _buildBookingStatuses() {
     // Only build once and cache the result
     if (_cachedBookingStatuses != null) {
-      print('🔍 Using cached booking statuses: ${_cachedBookingStatuses!.length}');
+      DebugLogger.api('Using cached booking statuses: ${_cachedBookingStatuses!.length}');
       return _cachedBookingStatuses!;
     }
     
@@ -250,7 +261,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                            currentUserEmail.contains('barangay') ||
                            currentUserEmail.contains('admin');
 
-    print('🔍 Building booking statuses for user: $currentUserEmail (isOfficial: $isOfficial)');
+    DebugLogger.api('Building booking statuses for user: $currentUserEmail (isOfficial: $isOfficial)');
 
     // SAME LOGIC FOR BOTH ROLES - just different visibility
     // Add all pending bookings (yellow) - visible to both roles
@@ -258,14 +269,12 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
       if (bookings.isNotEmpty) {
         final formattedDate = _formatDateForCalendar(date);
         statuses[formattedDate] = 'pending'; // All pending bookings
-        print('🔍 Added pending booking: $date -> $formattedDate');
+        DebugLogger.api('Added pending booking: $date -> $formattedDate');
       }
     });
 
     // 🔥 ROLE-SPECIFIC LOGIC: Different behavior for residents vs officials
-    print('🔍🔍🔍 Building calendar statuses from approved bookings...');
-    print('🔍 DEBUG: User role: ${_currentUser?['role']}, Is Official: $isOfficial');
-    print('🔍 DEBUG: Current user email: ${_currentUser?['email']}');
+    DebugLogger.api('Building calendar statuses from approved bookings for user: ${_currentUser?['role']} (isOfficial: $isOfficial)');
     
     _approvedBookings.forEach((date, bookings) {
       if (bookings.isNotEmpty) {
@@ -273,7 +282,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
         
         if (isOfficial) {
           // 👨‍💼 OFFICIALS: Resident approved bookings should NOT lock calendar
-          print('🔍🔍🔍⚪ Resident approved booking IGNORED for OFFICIAL: $date -> $formattedDate (bookings: ${bookings.length})');
+          DebugLogger.api('Resident approved booking IGNORED for OFFICIAL: $date -> $formattedDate (bookings: ${bookings.length})');
           // Don't add to statuses - show as available for officials
         } else {
           // 👥 RESIDENTS: Check if approved booking belongs to current user
@@ -284,27 +293,26 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
           if (hasOwnBooking) {
             // Resident's OWN approved booking - show as green in calendar but still tappable
             statuses[formattedDate] = 'own_approved'; 
-            print('🔍🔍🔍✅ RESIDENT OWN approved booking (GREEN/TAPPABLE): $date -> $formattedDate (bookings: ${bookings.length})');
+            DebugLogger.success('RESIDENT OWN approved booking (GREEN/TAPPABLE): $date -> $formattedDate (bookings: ${bookings.length})');
           } else {
             // Other residents' approved bookings - lock calendar
             statuses[formattedDate] = 'approved'; 
-            print('🔍🔍🔍✅ LOCKED date for RESIDENT (OTHER USER): $date -> $formattedDate (bookings: ${bookings.length})');
+            DebugLogger.api('LOCKED date for RESIDENT (OTHER USER): $date -> $formattedDate (bookings: ${bookings.length})');
           }
         }
         
         bookings.forEach((booking) {
           final isOwnBooking = booking['user_email']?.toString() == _currentUser?['email']?.toString();
-          print('   🔍🔍🔍 - Resident Approved Booking: ${booking['user_email']} - ${booking['status']} (ID: ${booking['id']}) ${isOwnBooking ? '(OWN)' : '(OTHER)'}');
+          DebugLogger.api('Resident Approved Booking: ${booking['user_email']} - ${booking['status']} (ID: ${booking['id']}) ${isOwnBooking ? '(OWN)' : '(OTHER)'}');
         });
       } else {
-        print('🔍🔍🔍⚠️ Empty approved bookings for date: $date');
+        DebugLogger.warning('Empty approved bookings for date: $date');
       }
     });
     // 🔥 END: Role-specific approved booking logic
 
     // 🔥 ROLE-SPECIFIC LOGIC: Different locking behavior for residents vs officials
-    print('🔥🔥🔥 Building calendar statuses from official bookings...');
-    print('🔍 DEBUG: User role: ${_currentUser?['role']}, Is Official: $isOfficial');
+    DebugLogger.api('Building calendar statuses from official bookings for user: ${_currentUser?['role']} (isOfficial: $isOfficial)');
     
     _officialBookings.forEach((date, bookings) {
       if (bookings.isNotEmpty) {
@@ -312,13 +320,13 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
         
         // 🔒 LOCK for BOTH roles: Official bookings block calendar for everyone
         statuses[formattedDate] = 'official_locked'; 
-        print('🔥🔥🔥✅ LOCKED date for ALL USERS: $date -> $formattedDate (bookings: ${bookings.length})');
+        DebugLogger.success('LOCKED date for ALL USERS: $date -> $formattedDate (bookings: ${bookings.length})');
         
         bookings.forEach((booking) {
-          print('   🔥🔥🔥 - Official Booking: ${booking['user_email']} - ${booking['status']} (ID: ${booking['id']})');
+          DebugLogger.api('Official Booking: ${booking['user_email']} - ${booking['status']} (ID: ${booking['id']})');
         });
       } else {
-        print('🔥🔥🔥⚠️ Empty official bookings for date: $date');
+        DebugLogger.warning('Empty official bookings for date: $date');
       }
     });
     // 🔥 END: Official bookings lock calendar for everyone
@@ -329,8 +337,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
       });
     }
 
-    print('🔍 FacilityCalendarScreen._buildBookingStatuses - total statuses: ${statuses.length}');
-    print('🔍 Status map entries: ${statuses.entries.map((e) => '${e.key}: ${e.value}').toList()}');
+    DebugLogger.api('Total booking statuses: ${statuses.length}');
     
     return statuses;
   }
@@ -340,7 +347,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
       final DateTime date = DateTime.parse(dateStr);
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
-      print('❌ Error parsing date: $dateStr');
+      DebugLogger.error('Error parsing date: $dateStr', error: e);
       return dateStr; // Return original string if parsing fails
     }
   }
@@ -350,7 +357,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.facility['name'] ?? 'Facility Calendar'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -362,11 +369,11 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                         spreadRadius: 2,
                         blurRadius: 8,
                         offset: const Offset(0, 4),
@@ -378,16 +385,16 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                     children: [
                       Text(
                         widget.facility['name'] ?? 'Facility Name',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         widget.facility['description'] ?? 'Facility description',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600]),
                       ),
                       Row(
                         children: [
@@ -416,12 +423,12 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                       ),
                       if ((widget.facility['amenities']?.toString() ?? '').isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Amenities:',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: widget.isDarkMode ? Colors.white : Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -429,7 +436,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                           _formatAmenities(widget.facility['amenities']),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -442,11 +449,11 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                   child: Container(
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                           spreadRadius: 2,
                           blurRadius: 8,
                           offset: const Offset(0, 4),
@@ -459,7 +466,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
+                            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(12),
                               topRight: Radius.circular(12),
@@ -467,14 +474,14 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.calendar_today, color: Colors.blue.shade700),
+                              Icon(Icons.calendar_today, color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700),
                               const SizedBox(width: 8),
                               Text(
                                 'Select a Date',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade700,
+                                  color: widget.isDarkMode ? Colors.blue.shade300 : Colors.blue.shade700,
                                 ),
                               ),
                             ],
@@ -498,7 +505,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -516,7 +523,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: widget.isDarkMode ? Colors.white : Colors.black87,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -553,7 +560,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
     final Map<String, String> statuses = _buildBookingStatuses();
     final String? dateStatus = statuses[dateKey];
     
-    print('🔍 Date selection: $dateKey, status: $dateStatus, isOfficial: $isOfficial');
+    DebugLogger.api('Date selection: $dateKey, status: $dateStatus, isOfficial: $isOfficial');
     
     if (isOfficial && (dateStatus == 'pending' || dateStatus == 'official')) {
       // Show warning dialog for officials when there are existing bookings
@@ -627,7 +634,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                 _navigateToBookingForm(selectedDate);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Proceed Anyway'),
@@ -644,9 +651,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
                            currentUserEmail.contains('barangay') ||
                            currentUserEmail.contains('admin');
     
-    print('🔍 Opening calendar for facility: ${widget.facility['name']}');
-    print('🔍 Passing user data: ${_currentUser?['email']}');
-    print('🔍 Is official user: $isOfficial');
+    DebugLogger.api('Opening calendar for facility: ${widget.facility['name']} with user: ${_currentUser?['email']} (isOfficial: $isOfficial)');
     
     if (isOfficial) {
       // Navigate to official booking form
@@ -657,6 +662,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
             facility: widget.facility,
             selectedDate: selectedDate,
             userData: _currentUser,
+            isDarkMode: widget.isDarkMode,
           ),
         ),
       );
@@ -669,6 +675,7 @@ class _FacilityCalendarScreenState extends State<FacilityCalendarScreen> {
             facility: widget.facility,
             selectedDate: selectedDate,
             userData: _currentUser,
+            isDarkMode: widget.isDarkMode,
           ),
         ),
       );

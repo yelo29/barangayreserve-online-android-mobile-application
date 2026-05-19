@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../services/data_service.dart';
 import '../../../services/auth_api_service.dart';
+import '../../../services/base64_image_service.dart';
 import '../../../utils/debug_logger.dart';
-import '../../../widgets/facility_icon.dart';
+import '../../../widgets/base64_image_widget.dart';
 
 class FacilityEditScreen extends StatefulWidget {
   final Map<String, dynamic>? facility;
+  final bool isDarkMode;
 
-  const FacilityEditScreen({super.key, this.facility});
+  const FacilityEditScreen({super.key, this.facility, this.isDarkMode = false});
 
   @override
   State<FacilityEditScreen> createState() => _FacilityEditScreenState();
@@ -23,20 +27,10 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
   final TextEditingController _downpaymentController = TextEditingController();
   final TextEditingController _amenitiesController = TextEditingController();
 
-  // Emoji picker variables
-  String _selectedEmoji = '🏢'; // Default emoji
+  // Image picker variables
+  String? _selectedImageBase64;
   bool _isLoading = false;
   String? _errorMessage;
-
-  // Facility emoji options
-  final List<String> _facilityEmojis = [
-    '🏢', '🏟️', '🏊', '🏋️', '🎾', '🏐', '🏸', '🏓',
-    '🏹', '🥊', '🤺', '🏌️', '⛳', '🏇', '🏂', '🏄',
-    '🚣', '🏊‍♀️', '🏋️‍♀️', '🤸', '🧘', '🎭', '🎨', '🎪',
-    '🎬', '🎮', '🎯', '🎲', '🎰', '🎡', '🎢', '🎠',
-    '🏛️', '🏰', '🏯', '🏛️', '⛪', '🕌', '🕍', '🛕',
-    '🏦', '🏨', '🏥', '🏭', '🏪', '🏫', '🏬', '🏤'
-  ];
 
   @override
   void initState() {
@@ -56,8 +50,10 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
       _amenitiesController.text =
           widget.facility!['amenities']?.toString() ?? '';
       
-      // Load existing emoji from main_photo_url field or use default
-      _selectedEmoji = widget.facility!['main_photo_url']?.toString() ?? '🏢';
+      // Load existing image from main_photo_url field
+      if (widget.facility!['main_photo_url'] != null && widget.facility!['main_photo_url'].toString().isNotEmpty) {
+        _selectedImageBase64 = widget.facility!['main_photo_url']?.toString();
+      }
     }
   }
 
@@ -72,63 +68,44 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
     super.dispose();
   }
 
-  // Emoji picker method
-  void _showEmojiPicker() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Choose Facility Icon'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 6,
-                childAspectRatio: 1.0,
-              ),
-              itemCount: _facilityEmojis.length,
-              itemBuilder: (context, index) {
-                final emoji = _facilityEmojis[index];
-                final isSelected = emoji == _selectedEmoji;
-                
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedEmoji = emoji;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.shade100 : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey.shade300,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        emoji,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+  // Image picker method
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 800,
+        maxHeight: 800,
+      );
+
+      if (image != null) {
+        final File imageFile = File(image.path);
+        
+        // Convert to base64
+        final base64String = await Base64ImageService.imageToBase64(imageFile);
+        
+        if (base64String != null) {
+          setState(() {
+            _selectedImageBase64 = base64String;
+          });
+          
+          DebugLogger.success('Image selected successfully');
+        } else {
+          DebugLogger.error('Failed to convert image to base64');
+        }
+      }
+    } catch (e) {
+      DebugLogger.error('Error picking image', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
         );
-      },
-    );
+      }
+    }
   }
 
   Future<void> _saveFacility() async {
@@ -142,7 +119,7 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
     });
 
     try {
-      // Prepare facility data with emoji
+      // Prepare facility data with image
       final Map<String, dynamic> facilityData = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -150,7 +127,7 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
         'price': _rateController.text.trim(),
         'downpayment': _downpaymentController.text.trim(),
         'amenities': _amenitiesController.text.trim(),
-        'image_url': _selectedEmoji, // Use existing image_url column for emoji
+        'image_url': _selectedImageBase64 ?? '', // Use base64 image
         'active': true,
       };
 
@@ -160,36 +137,36 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
       // Get user role from AuthApiService
       final userData = await AuthApiService.instance.getCurrentUser();
       final String? role = userData?['role'];
-      print('🔍 DEBUG: User role = $role');
+      DebugLogger.api('User role: $role');
 
       if (role == 'official') {
-        print('✅ Using Server API for official user');
+        DebugLogger.api('Using Server API for official user');
         if (widget.facility == null || widget.facility!['id'] == null) {
           // Create new facility via server
-          print('📝 Creating new facility via server');
+          DebugLogger.api('Creating new facility via server');
           facilityData['createdAt'] = DateTime.now().toIso8601String();
           final result = await DataService.createFacility(facilityData);
-          print('📡 Create facility result: $result');
+          DebugLogger.api('Create facility result: $result');
           success = result['success'] ?? false;
           successMessage = success
               ? 'Facility created successfully!'
               : result['message'] ?? 'Failed to create facility';
         } else {
           // Update facility via server
-          print('📝 Updating facility ${widget.facility!['id']} via server');
+          DebugLogger.api('Updating facility ${widget.facility!['id']} via server');
           facilityData['updatedAt'] = DateTime.now().toIso8601String();
           final result = await DataService.updateFacility(
             widget.facility!['id'].toString(),
             facilityData,
           );
-          print('📡 Update facility result: $result');
+          DebugLogger.api('Update facility result: $result');
           success = result['success'] ?? false;
           successMessage = success
               ? 'Facility updated successfully!'
               : result['message'] ?? 'Failed to update facility';
         }
       } else {
-        print('❌ Role is not official, using server fallback. Role = $role');
+        DebugLogger.warning('Role is not official, using server fallback. Role: $role');
         // Always use server API
         if (widget.facility == null || widget.facility!['id'] == null) {
           facilityData['createdAt'] = DateTime.now().toIso8601String();
@@ -247,13 +224,14 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text(
           widget.facility == null
               ? 'Add New Facility'
               : 'Edit ${widget.facility!['name'] ?? 'Facility'}',
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
         actions: [
           TextButton(
@@ -284,29 +262,52 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Facility Icon Picker
+              // Facility Image Picker
               Container(
                 width: double.infinity,
                 height: 200,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey.shade50,
+                  color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade50,
                 ),
                 child: Stack(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _selectedEmoji,
-                          style: const TextStyle(fontSize: 80),
-                        ),
-                      ),
-                    ),
+                    // Display selected image or placeholder
+                    _selectedImageBase64 != null
+                        ? Base64ImageWidget(
+                            base64Data: _selectedImageBase64,
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                            borderRadius: BorderRadius.circular(12),
+                          )
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_photo_alternate,
+                                    size: 48,
+                                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap to add facility image',
+                                    style: TextStyle(
+                                      color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                     Positioned(
                       bottom: 8,
                       right: 8,
@@ -317,10 +318,10 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                         ),
                         child: IconButton(
                           icon: const Icon(
-                            Icons.emoji_emotions,
+                            Icons.camera_alt,
                             color: Colors.white,
                           ),
-                          onPressed: _showEmojiPicker,
+                          onPressed: _pickImage,
                         ),
                       ),
                     ),
@@ -329,25 +330,30 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tap emoji icon to choose facility icon',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                'Tap camera icon to upload facility image',
+                style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600, fontSize: 12),
               ),
               const SizedBox(height: 24),
 
               // Basic Information
-              const Text(
+              Text(
                 'Basic Information',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Facility Name',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'Enter facility name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.business, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -360,11 +366,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Description',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'Enter facility description',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.description, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 maxLines: 3,
                 validator: (value) {
@@ -378,11 +389,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _capacityController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Capacity',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., 50 people',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.people),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.people, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -394,19 +410,24 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               const SizedBox(height: 24),
 
               // Pricing Information
-              const Text(
+              Text(
                 'Pricing Information',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _rateController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Rate',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., ₱500 per 2 hours',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.attach_money, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -419,11 +440,16 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
 
               TextFormField(
                 controller: _downpaymentController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Downpayment Amount',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., ₱200',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance_wallet),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.account_balance_wallet, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -435,19 +461,24 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
               const SizedBox(height: 24),
 
               // Amenities
-              const Text(
+              Text(
                 'Amenities',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: widget.isDarkMode ? Colors.white : Colors.black87),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _amenitiesController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Available Amenities',
+                  labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                   hintText: 'e.g., Tables, Chairs, Sound System, Lights',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.list),
+                  hintStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
+                  ),
+                  prefixIcon: Icon(Icons.list, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 maxLines: 2,
                 validator: (value) {
@@ -464,18 +495,18 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error, color: Colors.red.shade600),
+                      Icon(Icons.error, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red.shade600),
+                          style: TextStyle(color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600),
                         ),
                       ),
                     ],
@@ -490,7 +521,7 @@ class _FacilityEditScreenState extends State<FacilityEditScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveFacility,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

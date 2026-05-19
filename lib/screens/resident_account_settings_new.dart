@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
+import 'dart:convert';
+import 'dart:io';
 import '../../../services/auth_api_service.dart';
 import '../../../services/data_service.dart';
+import '../../../services/ban_validation_service.dart';
 import '../../../utils/debug_logger.dart';
 
 class ResidentAccountSettingsScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final bool isDarkMode;
   
-  const ResidentAccountSettingsScreen({super.key, this.userData});
+  const ResidentAccountSettingsScreen({super.key, this.userData, this.isDarkMode = false});
 
   @override
   State<ResidentAccountSettingsScreen> createState() => _ResidentAccountSettingsScreenState();
@@ -19,7 +25,9 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
   final _addressController = TextEditingController();
   bool _isLoading = false;
   bool _isLoadingContact = false;
+  bool _isUploadingPhoto = false;
   List<Map<String, dynamic>> _officials = [];
+  Map<String, dynamic>? _currentUser;
 
   @override
   void initState() {
@@ -45,22 +53,26 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
       
       if (currentUser != null) {
         setState(() {
+          _currentUser = currentUser;
           _nameController.text = currentUser['full_name'] ?? '';
           _contactController.text = currentUser['contact_number'] ?? '';
           _addressController.text = currentUser['address'] ?? '';
         });
         print('🔍 Account Settings - Loaded fresh data from server:');
+        print('  - Email: "${currentUser['email']}"');
         print('  - Full Name: "${_nameController.text}"');
         print('  - Contact: "${_contactController.text}"');
         print('  - Address: "${_addressController.text}"');
       } else if (widget.userData != null) {
         // Fallback to widget data
         setState(() {
+          _currentUser = widget.userData;
           _nameController.text = widget.userData!['full_name'] ?? '';
           _contactController.text = widget.userData!['contact_number'] ?? '';
           _addressController.text = widget.userData!['address'] ?? '';
         });
         print('🔍 Account Settings - Loaded fallback data:');
+        print('  - Email: "${widget.userData!['email']}"');
         print('  - Full Name: "${_nameController.text}"');
         print('  - Contact: "${_contactController.text}"');
         print('  - Address: "${_addressController.text}"');
@@ -70,6 +82,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
       // Fallback to widget data
       if (widget.userData != null) {
         setState(() {
+          _currentUser = widget.userData;
           _nameController.text = widget.userData!['full_name'] ?? '';
           _contactController.text = widget.userData!['contact_number'] ?? '';
           _addressController.text = widget.userData!['address'] ?? '';
@@ -123,6 +136,19 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
   Future<void> _updatePersonalInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 🚫 BAN VALIDATION: Check if user is banned before allowing profile updates
+    if (_currentUser != null && _currentUser!['is_banned'] == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Banned users cannot update profile information'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -175,13 +201,165 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
     }
   }
 
+  Future<void> _pickAndUploadProfilePhoto() async {
+    try {
+      // 🚫 BAN VALIDATION: Check if user is banned before allowing photo upload
+      if (_currentUser != null && _currentUser!['is_banned'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Banned users cannot change profile photo'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        _isUploadingPhoto = true;
+      });
+
+      // Pick image from gallery
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        // Convert image to base64
+        final bytes = await image.readAsBytes();
+        final base64String = base64Encode(bytes);
+        
+        // Get current user data
+        final authApiService = AuthApiService.instance;
+        final currentUser = await authApiService.getCurrentUser();
+        
+        if (currentUser != null) {
+          // Update profile photo using server API
+          final result = await DataService.updateUserProfile({
+            'profile_photo_url': 'data:image/jpeg;base64,$base64String',
+          });
+          
+          if (result['success']) {
+            // Refresh user data to get updated profile photo
+            await authApiService.refreshCurrentUser();
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile photo updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to update profile photo: ${result['error']}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      DebugLogger.ui('Error picking/uploading profile photo: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isUploadingPhoto = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 🚫 BAN VALIDATION: Check if user is banned before allowing access
+    if (_currentUser != null && _currentUser!['is_banned'] == true) {
+      return Scaffold(
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('Account Restricted'),
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.red,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.block,
+                  size: 80,
+                  color: widget.isDarkMode ? Colors.red.shade400 : Colors.red[400],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Account Banned',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? Colors.red.shade400 : Colors.red[700],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Your account has been banned and cannot access account settings.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _currentUser!['ban_reason'] ?? 'Contact the barangay office for more information.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    BanValidationService.showBanDialog(context, {
+                      'success': false,
+                      'error_type': 'user_banned',
+                      'message': 'Account is banned. Cannot access account settings.',
+                      'ban_reason': _currentUser!['ban_reason'] ?? 'No reason provided',
+                    });
+                  },
+                  icon: const Icon(Icons.info_outline),
+                  label: const Text('View Ban Details'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.blue[50],
       appBar: AppBar(
         title: const Text('Account Settings'),
-        backgroundColor: Colors.blue,
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -194,11 +372,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -214,13 +392,13 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.blue[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Icon(
                           Icons.person,
                           size: 30,
-                          color: Colors.blue[600],
+                          color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -229,15 +407,15 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.userData?['email'] ?? 'resident@example.com',
-                              style: const TextStyle(
+                              _currentUser?['email'] ?? widget.userData?['email'] ?? 'resident@example.com',
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: widget.isDarkMode ? Colors.white : Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 4),
-                            if (widget.userData?['verified'] == true)
+                            if ((_currentUser?['verified'] == true) || (widget.userData?['verified'] == true))
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -278,11 +456,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             // Personal Information Section
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -296,25 +474,115 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Personal Information',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: widget.isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Profile Photo Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.blue[50],
+                                    borderRadius: BorderRadius.circular(40),
+                                    border: Border.all(color: widget.isDarkMode ? Colors.grey.shade500 : Colors.blue[200]!),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: ClipOval(
+                                          child: _buildProfilePhoto(),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        bottom: 0,
+                                        child: GestureDetector(
+                                          onTap: _pickAndUploadProfilePhoto,
+                                          child: Container(
+                                            width: 28,
+                                            height: 28,
+                                            decoration: BoxDecoration(
+                                              color: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue[600],
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: _isUploadingPhoto
+                                                ? const CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                    strokeWidth: 2,
+                                                  )
+                                                : const Icon(
+                                                    Icons.camera_alt,
+                                                    color: Colors.white,
+                                                    size: 16,
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Profile Photo',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Tap to change your profile photo',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Full Name',
-                          prefixIcon: const Icon(Icons.person),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.person, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -326,14 +594,17 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _contactController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Contact Number',
-                          prefixIcon: const Icon(Icons.phone),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.phone, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
@@ -346,14 +617,17 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _addressController,
+                        style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87),
                         decoration: InputDecoration(
                           labelText: 'Address',
-                          prefixIcon: const Icon(Icons.location_on),
+                          labelStyle: TextStyle(color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                          prefixIcon: Icon(Icons.location_on, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.black87),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                         ),
                         maxLines: 2,
                         validator: (value) {
@@ -380,7 +654,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                               : const Icon(Icons.save),
                           label: Text(_isLoading ? 'Updating...' : 'Update Personal Information'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: widget.isDarkMode ? Colors.blue.shade700 : Colors.blue,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
@@ -400,11 +674,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
             // Customer Service Section
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 8,
                     offset: const Offset(0, 4),
@@ -416,12 +690,12 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Customer Service',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -429,7 +703,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       'Contact barangay officials for assistance',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -438,15 +712,15 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 12),
-                            Text('Loading officials...'),
+                            CircularProgressIndicator(color: widget.isDarkMode ? Colors.white : null),
+                            const SizedBox(width: 12),
+                            Text('Loading officials...', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
                           ],
                         ),
                       )
@@ -457,21 +731,21 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey[50],
+                              color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                             ),
                             child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue[50],
+                                    color: widget.isDarkMode ? Colors.grey.shade600 : Colors.blue[50],
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.person,
-                                    color: Colors.blue,
+                                    color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue,
                                     size: 20,
                                   ),
                                 ),
@@ -482,9 +756,10 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                     children: [
                                       Text(
                                         official['full_name'] ?? 'Unknown Official',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
+                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -492,7 +767,7 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                                         official['contact_number']?.toString() ?? 'No contact available',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                         ),
                                       ),
                                     ],
@@ -507,22 +782,22 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[50],
+                          color: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.info_outline,
-                              color: Colors.grey[600],
+                              color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Contact barangay office for assistance',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                   fontSize: 14,
                                 ),
                               ),
@@ -570,11 +845,11 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: widget.isDarkMode ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -585,32 +860,32 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue[50],
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            color: Colors.blue[600],
+            color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
           ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: widget.isDarkMode ? Colors.white : Colors.black87,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: Colors.blue[600],
+          color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue[600],
           size: 20,
         ),
         onTap: onTap,
@@ -692,6 +967,47 @@ class _ResidentAccountSettingsScreenState extends State<ResidentAccountSettingsS
         ],
       ),
     );
+  }
+
+  Widget _buildProfilePhoto() {
+    final authApiService = AuthApiService.instance;
+    final profilePhotoUrl = authApiService.getUserProfilePhoto();
+    
+    if (profilePhotoUrl.isNotEmpty) {
+      // Check if it's a base64 image or URL
+      if (profilePhotoUrl.startsWith('data:image')) {
+        // Base64 image
+        try {
+          final base64String = profilePhotoUrl.split(',')[1];
+          final decodedBytes = base64Decode(base64String);
+          return Image.memory(
+            decodedBytes,
+            width: 80,
+            height: 80,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.person, size: 40, color: Colors.grey[600]);
+            },
+          );
+        } catch (e) {
+          return Icon(Icons.person, size: 40, color: Colors.grey[600]);
+        }
+      } else {
+        // URL image
+        return Image.network(
+          profilePhotoUrl,
+          width: 80,
+          height: 80,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(Icons.person, size: 40, color: Colors.grey[600]);
+          },
+        );
+      }
+    } else {
+      // Default placeholder
+      return Icon(Icons.person, size: 40, color: Colors.grey[600]);
+    }
   }
 
   void _showPrivacyPolicy() {

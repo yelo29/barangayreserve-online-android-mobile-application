@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../services/base64_image_service.dart';
+import '../utils/debug_logger.dart';
 
 class Base64ImageWidget extends StatelessWidget {
   final String? base64Data;
@@ -46,13 +47,13 @@ class Base64ImageWidget extends StatelessWidget {
           fit: fit,
           gaplessPlayback: true,
           errorBuilder: (context, error, stackTrace) {
-            print('❌ Error rendering base64 image: $error');
+            DebugLogger.error('Error rendering base64 image: $error');
             return errorWidget ?? _buildErrorWidget();
           },
         ),
       );
     } catch (e) {
-      print('❌ Error displaying base64 image: $e');
+      DebugLogger.error('Error displaying base64 image', error: e);
       return errorWidget ?? _buildErrorWidget();
     }
   }

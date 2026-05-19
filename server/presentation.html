@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Barangay Reserve - Presentation & Marketing</title>
+    <meta name="description" content="Comprehensive presentation of Barangay Reserve mobile facility booking system for Philippine barangays.">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #17a2b8;
+            --accent-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-radius: 16px;
+            --box-shadow: 0 8px 32px rgba(0, 123, 255, 0.08);
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            background: #0a0f1e;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            min-width: 320px;
+            max-width: 100vw;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ─── NOISE TEXTURE OVERLAY ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            position: relative;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 30px 80px;
+            overflow: hidden;
+            background: #060c1d;
+        }
+
+        .header-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+            animation: float 8s ease-in-out infinite;
+        }
+        .orb-1 { width: 500px; height: 500px; background: var(--primary-color); top: -150px; left: -100px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: var(--secondary-color); bottom: -100px; right: -80px; animation-delay: -3s; }
+        .orb-3 { width: 300px; height: 300px; background: var(--accent-color); top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.15; animation-delay: -6s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.05); }
+        }
+
+        /* Grid lines overlay */
+        .grid-lines {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,123,255,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,123,255,0.06) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,123,255,0.15);
+            border: 1px solid rgba(0,123,255,0.3);
+            color: #7bb8ff;
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.82em;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-badge::before {
+            content: '';
+            width: 7px; height: 7px;
+            background: #28a745;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #28a745;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5em, 6vw, 4em);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 30%, rgba(0,123,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: rgba(255,255,255,0.7);
+            max-width: 600px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,123,255,0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        /* ─── MAIN CONTENT ─── */
+        .page-body {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section {
+            margin-bottom: 100px;
+        }
+
+        .section-label {
+            display: inline-block;
+            background: rgba(0,123,255,0.15);
+            color: #7bb8ff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,123,255,0.3);
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2em, 4vw, 3em);
+            font-weight: 800;
+            color: white;
+            margin-bottom: 24px;
+            line-height: 1.1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .section-subtitle {
+            font-size: 1.2em;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 40px;
+            max-width: 800px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        /* ─── PRESENTATION GRID ─── */
+        .presentation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+            width: 100%;
+        }
+
+        .presentation-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 40px 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .presentation-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .presentation-card:hover::before { transform: scaleX(1); }
+        
+        .presentation-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(0,123,255,0.3);
+            box-shadow: 0 20px 48px rgba(0,123,255,0.2);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .presentation-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 20px;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .presentation-card p {
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+            font-size: 1.05em;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .presentation-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .presentation-card li {
+            margin-bottom: 16px;
+            color: rgba(255,255,255,0.8);
+            font-size: 1em;
+            line-height: 1.5;
+            position: relative;
+            padding-left: 24px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .presentation-card li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .presentation-card strong {
+            color: white;
+            font-weight: 600;
+        }
+
+        .tech-list {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .tech-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: rgba(0,123,255,0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0,123,255,0.2);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .tech-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.95em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .tech-value {
+            font-weight: 500;
+            color: white;
+            font-size: 0.95em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 60%;
+            text-align: right;
+        }
+
+        /* ─── MARKETING SECTION ─── */
+        .marketing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .marketing-card {
+            background: linear-gradient(135deg, rgba(0,123,255,0.1), rgba(23,162,184,0.1));
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(0,123,255,0.2);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .marketing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 48px rgba(0,123,255,0.3);
+        }
+
+        .marketing-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .marketing-card h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .marketing-card p {
+            color: rgba(255,255,255,0.8);
+            font-size: 1em;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        /* ─── STATS SECTION ─── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 3em;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            background: #060c1d;
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .footer-brand {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .footer p {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 20px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1200px) {
+            .content {
+                max-width: 100%;
+                padding: 60px 30px;
+            }
+            
+            .presentation-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 25px;
+            }
+        }
+
+        /* ─── SCROLL TO TOP BUTTON ─── */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top::before {
+            content: '↑';
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                min-height: 50vh;
+                padding: 40px 20px 60px;
+            }
+
+            .content {
+                padding: 40px 20px;
+                max-width: 100%;
+            }
+
+            .presentation-grid,
+            .marketing-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .presentation-card {
+                padding: 30px 25px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+
+            .section {
+                margin-bottom: 60px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2.5em;
+            }
+
+            .content {
+                padding: 30px 15px;
+            }
+
+            .presentation-card {
+                padding: 25px 20px;
+            }
+
+            .presentation-card h3 {
+                font-size: 1.3em;
+            }
+
+            .card-icon {
+                font-size: 2.5em;
+            }
+
+            .tech-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px 16px;
+            }
+
+            .tech-value {
+                max-width: 100%;
+                text-align: left;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .section-title {
+                font-size: 2em;
+            }
+
+            .section-subtitle {
+                font-size: 1.1em;
+            }
+
+            .presentation-card,
+            .marketing-card {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+            }
+
+            .presentation-card * {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+            }
+
+            .tech-explanation {
+                background: rgba(0, 123, 255, 0.05);
+                border-left: 3px solid var(--primary-color);
+                padding: 15px;
+                margin: 12px 0 15px 0;
+                border-radius: 0 8px 8px 0;
+                font-size: 0.9em;
+                line-height: 1.5;
+                color: rgba(255, 255, 255, 0.85);
+            }
+
+            .tech-explanation strong {
+                color: var(--primary-color);
+                font-weight: 600;
+            }
+
+            .security-feature {
+                margin-bottom: 20px;
+            }
+
+            .security-feature h4 {
+                color: var(--primary-color);
+                font-size: 1.1em;
+                margin-bottom: 8px;
+                font-weight: 600;
+            }
+
+            .performance-feature {
+                margin-bottom: 20px;
+            }
+
+            .performance-feature h4 {
+                color: var(--secondary-color);
+                font-size: 1.1em;
+                margin-bottom: 8px;
+                font-weight: 600;
+            }
+        }
+
+        /* ─── REVEAL ANIMATION ─── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        
+        /* Ensure delays work properly for nested elements */
+        .security-feature,
+        .performance-feature {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .security-feature.reveal-visible,
+        .performance-feature.reveal-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .security-feature:nth-child(1) { transition-delay: 0.1s; }
+        .security-feature:nth-child(2) { transition-delay: 0.2s; }
+        .security-feature:nth-child(3) { transition-delay: 0.3s; }
+        .security-feature:nth-child(4) { transition-delay: 0.4s; }
+        .security-feature:nth-child(5) { transition-delay: 0.5s; }
+        
+        .performance-feature:nth-child(1) { transition-delay: 0.1s; }
+        .performance-feature:nth-child(2) { transition-delay: 0.2s; }
+        .performance-feature:nth-child(3) { transition-delay: 0.3s; }
+        .performance-feature:nth-child(4) { transition-delay: 0.4s; }
+        .performance-feature:nth-child(5) { transition-delay: 0.5s; }
+    </style>
+</head>
+<body>
+    <!-- ─── HEADER ─── -->
+    <div class="header">
+        <div class="header-bg">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="grid-lines"></div>
+        </div>
+
+        <div class="header-content">
+            <div class="header-badge">Marketing Presentation</div>
+            <h1>Barangay Reserve</h1>
+            <p>Transforming barangay facility management through innovative mobile technology for Philippine communities</p>
+
+            <div class="nav-buttons">
+                <a href="#tech-stack" class="btn btn-primary">📱 View Tech Stack</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <div class="page-body">
+        <div class="content">
+            <!-- Introduction -->
+            <section class="section reveal">
+                <div class="section-label">Introduction</div>
+                <h2 class="section-title">Easy Barangay Facility Booking</h2>
+                <p class="section-subtitle">
+                    A simple mobile app that helps barangay officials and residents manage facility bookings without paperwork or confusion.
+                </p>
+
+                <div class="marketing-grid">
+                    <div class="marketing-card reveal reveal-delay-2">
+                        <div class="marketing-icon">📱</div>
+                        <h3>Made for Everyone</h3>
+                        <p>Simple Android app designed for barangay officials and residents of all technical skill levels</p>
+                    </div>
+                    <div class="marketing-card reveal reveal-delay-3">
+                        <div class="marketing-icon">🛡️</div>
+                        <h3>Safe & Secure</h3>
+                        <p>Secure login system and data protection to keep all booking information safe</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Technology Stack -->
+            <section id="tech-stack" class="section reveal">
+                <div class="section-label">Technology Stack</div>
+                <h2 class="section-title">How It's Built</h2>
+                <p class="section-subtitle">
+                    Using proven technologies that work well together for a reliable booking system
+                </p>
+                
+                <div class="presentation-grid">
+                    <div class="presentation-card reveal reveal-delay-1">
+                        <div class="card-icon">💻</div>
+                        <h3>Mobile Application</h3>
+                        <p>Our Android app uses modern development tools for optimal performance:</p>
+                        <div class="tech-list">
+                            <div class="tech-item">
+                                <span class="tech-label">App Builder:</span>
+                                <span class="tech-value">Flutter Framework</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is Flutter?</strong> Flutter is Google's UI toolkit for building beautiful, natively compiled applications for mobile, web, and desktop from a single codebase. 
+                                <br><br>
+                                <strong>Why we use it:</strong> Flutter allows us to create a high-performance app with smooth animations and a modern interface while writing code only once. It's perfect for creating the polished UI our users expect.
+                                <br><br>
+                                <strong>In Short:</strong> Think of Flutter like a super-powered building kit that lets us create beautiful, fast mobile apps that work perfectly on Android phones. It's like having all the best tools in one toolbox to build something that looks and feels professional.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Language:</span>
+                                <span class="tech-value">Dart Programming</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is Dart?</strong> Dart is a programming language optimized for building user interfaces, developed by Google specifically for Flutter applications.
+                                <br><br>
+                                <strong>Why we use it:</strong> Dart provides fast performance, strong type safety, and excellent tooling. It compiles to native ARM code, ensuring our app runs smoothly on Android devices without the overhead of traditional app development.
+                                <br><br>
+                                <strong>In Short:</strong> Dart is like the language we use to give the app its instructions. Think of it like writing a recipe that tells the phone exactly what to do - when to show buttons, how to save information, and how to respond when you tap things. It makes sure everything works quickly and reliably.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Platform:</span>
+                                <span class="tech-value">Android Native</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is Android Native?</strong> Building specifically for Android platform ensures optimal performance and integration with device features.
+                                <br><br>
+                                <strong>Why we use it:</strong> Most barangay officials and residents use Android phones. Native Android development ensures our app works perfectly with their devices, camera (for receipt uploads), notifications, and system features.
+                                <br><br>
+                                <strong>In Short:</strong> This means we built the app specifically for Android phones, not a one-size-fits-all approach. It's like having a key that's perfectly cut for your specific lock - everything works smoothly, the camera opens when needed, and you get notifications properly. It just works better because it's made for your phone.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Design System:</span>
+                                <span class="tech-value">Material Design 3</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is Material Design 3?</strong> Google's modern design system that provides guidelines for creating beautiful, functional interfaces.
+                                <br><br>
+                                <strong>Why we use it:</strong> Material Design 3 ensures our app is intuitive, accessible, and follows familiar Android patterns. This makes it easy for users of all technical skill levels to navigate and use the booking system.
+                                <br><br>
+                                <strong>In Short:</strong> This is like using a well-known recipe book for design. We follow Google's proven design rules so the app looks and feels familiar to you. Buttons are where you expect them, colors are easy to see, and everything just makes sense. It's like walking into a room where the furniture is arranged exactly how you'd expect it to be.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-2">
+                        <div class="card-icon">⚙️</div>
+                        <h3>Backend Server</h3>
+                        <p>Our backend handles all booking operations and data management:</p>
+                        <div class="tech-list">
+                            <div class="tech-item">
+                                <span class="tech-label">Server Framework:</span>
+                                <span class="tech-value">Python Flask</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is Flask?</strong> Flask is a lightweight Python web framework that makes it easy to build web applications and APIs.
+                                <br><br>
+                                <strong>Why we use it:</strong> Flask is perfect for our booking system because it's fast, reliable, and easy to maintain. It handles user authentication, booking requests, and data processing efficiently. Python's simplicity makes the code readable and maintainable for future barangay IT staff.
+                                <br><br>
+                                <strong>In Short:</strong> Think of Flask as the brain of our system. It's like having a smart assistant that sits on our server and handles all the important work - checking who's logging in, saving booking requests, and making sure everything runs smoothly. It's reliable and does exactly what we need without being complicated.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Database System:</span>
+                                <span class="tech-value">MySQL Database</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is MySQL?</strong> MySQL is a popular open-source relational database management system that stores and organizes application data.
+                                <br><br>
+                                <strong>Why we use it:</strong> MySQL provides reliable, secure storage for all booking data, user information, and payment records. It ensures data integrity (no double bookings) and can handle multiple users accessing the system simultaneously. It's also easy to back up and maintain.
+                                <br><br>
+                                <strong>In Short:</strong> MySQL is like a super-organized filing cabinet for all our information. It keeps track of every booking, every user, and every payment in perfect order. Think of it as a digital logbook that never loses anything, never mixes up appointments, and can handle many people using it at the same time without any confusion.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">Security System:</span>
+                                <span class="tech-value">JWT Authentication</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is JWT?</strong> JSON Web Tokens (JWT) are a secure way to handle user authentication and authorization.
+                                <br><br>
+                                <strong>Why we use it:</strong> JWT ensures only logged-in users can access the booking system. Tokens are encrypted and expire automatically, preventing unauthorized access. This keeps resident data and booking information secure while allowing seamless login across devices.
+                                <br><br>
+                                <strong>In Short:</strong> JWT is like a special pass that gets created when you log in. It's like having a temporary ID badge that proves you're allowed to use the system. This badge automatically expires after a day for security, so even if someone finds your phone, they can't access your account. It keeps everything safe while making it convenient for you.
+                            </div>
+                            <div class="tech-item">
+                                <span class="tech-label">API Design:</span>
+                                <span class="tech-value">RESTful Architecture</span>
+                            </div>
+                            <div class="tech-explanation">
+                                <strong>What is RESTful API?</strong> REST (Representational State Transfer) is a standard way for applications to communicate over the internet.
+                                <br><br>
+                                <strong>Why we use it:</strong> RESTful API ensures reliable communication between the mobile app and server. It handles booking requests, user authentication, and data synchronization efficiently. This architecture makes the system fast, scalable, and easy to debug if issues arise.
+                                <br><br>
+                                <strong>In Short:</strong> Think of RESTful API like a postal service between your phone and our server. When you tap "Book Facility," your phone sends a letter (request) to the server. The server processes it and sends back a reply. This system makes sure every request gets delivered properly and every response is understood. It's like having perfect communication between your phone and our system.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-3">
+                        <div class="card-icon">🔐</div>
+                        <h3>Security & Authentication System</h3>
+                        <p>Our comprehensive security framework protects user data and prevents system abuse:</p>
+                        
+                        <div class="security-feature">
+                            <h4>🔑 Gmail Authentication System</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Gmail Authentication?</strong> This is Google's secure login system that allows users to sign in using their existing Google accounts.
+                                <br><br>
+                                <strong>Why we use it:</strong> Residents already have Gmail accounts, so they don't need to remember new passwords. Google handles password security, two-factor authentication, and account recovery. This eliminates the risk of weak passwords while making login simple and secure for barangay officials and residents.
+                                <br><br>
+                                <strong>In Short:</strong> Instead of creating a new password, you just use your existing Gmail account. It's like using your house key to open a community center - you already have the key, so you don't need to carry another one. Google makes sure your login is super secure, so you don't have to worry about someone guessing your password.
+                            </div>
+                        </div>
+
+                        <div class="security-feature">
+                            <h4>🛡️ JWT Token Security</h4>
+                            <div class="tech-explanation">
+                                <strong>What are JWT Tokens?</strong> JSON Web Tokens are encrypted digital passes that verify user identity without storing passwords on the device.
+                                <br><br>
+                                <strong>Why we use it:</strong> Tokens automatically expire after a set time, preventing unauthorized access if someone's phone is lost or stolen. Each API request includes the token, ensuring only authenticated users can book facilities or view sensitive information. This creates a secure, stateless authentication system.
+                                <br><br>
+                                <strong>In Short:</strong> After you log in, the system gives you a special temporary pass that automatically expires after 24 hours. It's like a visitor badge that lets you move around the system safely. If someone steals your phone, the badge expires quickly, so they can't access your account. It's security that protects you without being inconvenient.
+                            </div>
+                        </div>
+
+                        <div class="security-feature">
+                            <h4>🔒 Data Encryption</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Data Encryption?</strong> Encryption converts sensitive information into coded text that can only be read with the correct encryption key.
+                                <br><br>
+                                <strong>Why we use it:</strong> All personal information, booking details, and payment records are encrypted both in transit (between app and server) and at rest (in the database). This protects resident privacy and prevents unauthorized access to sensitive barangay operation data.
+                                <br><br>
+                                <strong>In Short:</strong> Think of encryption like putting your information in a locked safe with a secret code. Even if someone intercepts your data, they can't read it without the special key. It's like writing your personal diary in a secret language that only you and the system can understand. Your privacy is completely protected.
+                            </div>
+                        </div>
+
+                        <div class="security-feature">
+                            <h4>👥 Role-Based Access Control</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Role-Based Access?</strong> Different users get different permissions based on their role (resident vs. barangay official).
+                                <br><br>
+                                <strong>Why we use it:</strong> Residents can only book facilities and view their own bookings. Barangay officials can approve bookings, manage schedules, and view usage reports. This prevents unauthorized access while ensuring officials have the tools they need to manage barangay operations effectively.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like having different keys for different doors. Residents get a key that opens their own locker and the booking room. Officials get a master key that opens all the management doors. This ensures residents can't accidentally access administrative functions while officials have everything they need to manage the system properly.
+                            </div>
+                        </div>
+
+                        <div class="security-feature">
+                            <h4>📝 Audit Logging System</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Audit Logging?</strong> Every action in the system (login, booking, approval, payment) is recorded with timestamps and user details.
+                                <br><br>
+                                <strong>Why we use it:</strong> Creates a complete audit trail for transparency and accountability. If there are disputes about bookings or payments, officials can review the exact sequence of events. This also helps detect suspicious activity and provides evidence for any investigations.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like a security camera that records everything that happens in the system. Every time someone logs in, makes a booking, or uploads a payment, it creates a timestamped record. If there's ever a question about what happened, officials can review the exact timeline. It's like having a perfect memory of all system activities.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-4">
+                        <div class="card-icon">📊</div>
+                        <h3>Performance & Optimization</h3>
+                        <p>Optimized for speed, reliability, and accessibility across all conditions:</p>
+                        
+                        <div class="performance-feature">
+                            <h4>⚡ Fast Loading & Startup</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Fast Loading?</strong> The app starts quickly and data loads instantly without long waiting times.
+                                <br><br>
+                                <strong>Why it matters:</strong> Barangay officials and residents often have limited time. Fast loading means they can quickly check availability, make bookings, or approve requests without frustration. This encourages regular use and ensures the system doesn't slow down barangay operations.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like a fast-food restaurant vs. a fancy restaurant. You get what you need quickly without waiting. When you tap the app, it opens immediately. When you check facility availability, the answer appears instantly. No spinning circles, no waiting screens - just instant results that respect your busy schedule.
+                            </div>
+                        </div>
+
+                        <div class="performance-feature">
+                            <h4>📶 Offline Support Capability</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Offline Support?</strong> The app can function with limited or intermittent internet connectivity.
+                                <br><br>
+                                <strong>Why it matters:</strong> Many barangays experience unstable internet connections. Offline support allows users to view previously loaded information, draft bookings, and queue actions that sync when connectivity returns. This ensures the system works even in areas with poor infrastructure.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like having a backup generator when the power goes out. Even if your internet connection is weak or drops temporarily, you can still use the app to view your bookings and check schedules. When your connection returns, everything automatically syncs up. It's reliable even when the internet isn't.
+                            </div>
+                        </div>
+
+                        <div class="performance-feature">
+                            <h4>💾 Smart Data Caching</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Smart Caching?</strong> Frequently accessed data is stored locally on the device to reduce server requests.
+                                <br><br>
+                                <strong>Why it matters:</strong> Caching reduces server load and makes the app feel faster. Users can instantly view facility schedules, their booking history, and common information without waiting for server responses. This is especially important for users with limited data plans.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like keeping your favorite items in your pocket instead of going to the store every time. The app remembers commonly used information (like facility schedules) on your phone. When you check something you've seen before, it appears instantly because it's already stored locally. It saves both time and mobile data.
+                            </div>
+                        </div>
+
+                        <div class="performance-feature">
+                            <h4>🗄️ Database Optimization</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Database Optimization?</strong> Database queries are structured and indexed for maximum speed and efficiency.
+                                <br><br>
+                                <strong>Why it matters:</strong> Optimized databases ensure that booking availability checks, user authentication, and report generation happen instantly. This prevents system slowdowns during peak usage times (like weekends when many residents want to book facilities).
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like a well-organized library where every book has a perfect label and is in the right place. When you need information, the system finds it instantly instead of searching through piles of data. This means even when many people are using the app at once, everyone gets fast responses without any delays.
+                            </div>
+                        </div>
+
+                        <div class="performance-feature">
+                            <h4>📱 Mobile-First Design</h4>
+                            <div class="tech-explanation">
+                                <strong>What is Mobile-First Design?</strong> The entire system is designed specifically for mobile phone screens and usage patterns.
+                                <br><br>
+                                <strong>Why it matters:</strong> Most users will access the system from Android phones. Mobile-first design ensures buttons are easy to tap, text is readable without zooming, and the interface works perfectly with touch gestures. This makes the system accessible to users of all ages and technical abilities.
+                                <br><br>
+                                <strong>In Short:</strong> Think of it like designing clothes specifically for you instead of one-size-fits-all. Every button is sized for fingers, every text is readable on phone screens, and everything works with touch gestures. It's comfortable to use whether you're 18 or 80 years old, whether you're tech-savvy or just learning to use smartphones.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Application Purpose -->
+            <section class="section reveal">
+                <div class="section-label">Application Purpose</div>
+                <h2 class="section-title">What It Does</h2>
+                <p class="section-subtitle">
+                    Simple tools to help barangay officials and residents manage facility bookings without confusion
+                </p>
+                
+                <div class="presentation-grid">
+                    <div class="presentation-card reveal reveal-delay-1">
+                        <div class="card-icon">🎯</div>
+                        <h3>Main Features</h3>
+                        <p><strong>Barangay Reserve</strong> helps solve everyday problems:</p>
+                        <ul>
+                            <li><strong>Facility Booking:</strong> Reserve basketball courts, halls, and other barangay facilities</li>
+                            <li><strong>User Accounts:</strong> Safe login for residents and officials</li>
+                            <li><strong>Real-time Schedule:</strong> See available times and prevent double bookings</li>
+                            <li><strong>Payment Tracking:</strong> Upload receipt photos to confirm payments</li>
+                            <li><strong>Official Tools:</strong> Dashboard for barangay officials to manage requests</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-2">
+                        <div class="card-icon">🏢</div>
+                        <h3>Available Facilities</h3>
+                        <p>Designed to manage common barangay facilities:</p>
+                        <ul>
+                            <li><strong>Basketball Courts</strong></li>
+                            <li><strong>Other Facilities:</strong> Can be added as needed</li>
+                            
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-3">
+                        <div class="card-icon">👥</div>
+                        <h3>Who Might Uses It</h3>
+                        <p>Different tools for different user groups:</p>
+                        <ul>
+                            <li><strong>Residents:</strong> Book facilities and upload payment receipts</li>
+                            <li><strong>Barangay Officials:</strong> Approve bookings and manage schedules</li>
+                            <li><strong>Facility Managers:</strong> Monitor usage and schedule maintenance</li>
+                            <li><strong>Event Organizers:</strong> Coordinate multiple bookings for events</li>
+                            <li><strong>Youth Groups:</strong> Schedule sports activities and practices</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-4">
+                        <div class="card-icon">🚀</div>
+                        <h3>Key Advantages</h3>
+                        <p>Why this system works better than paper:</p>
+                        <ul>
+                            <li><strong>Mobile First:</strong> Works on Android phones everyone has</li>
+                            <li><strong>Easy to Use:</strong> Simple interface for all skill levels</li>
+                            <li><strong>No Paperwork:</strong> Digital records replace logbooks</li>
+                            <li><strong>Fair System:</strong> First-come, first-served booking rules</li>
+                            <li><strong>Cost Effective:</strong> Reduces administrative work for barangay</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Society Benefits -->
+            <section class="section reveal">
+                <div class="section-label">Social Impact</div>
+                <h2 class="section-title">How It Helps Communities</h2>
+                <p class="section-subtitle">
+                    Making barangay services better for everyone through simple technology
+                </p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card reveal reveal-delay-1">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Digital Access</div>
+                    </div>
+                    <div class="stat-card reveal reveal-delay-2">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Less Paperwork</div>
+                    </div>
+                    <div class="stat-card reveal reveal-delay-3">
+                        <div class="stat-number">80%</div>
+                        <div class="stat-label">Time Saved</div>
+                    </div>
+                    <div class="stat-card reveal reveal-delay-4">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Fair Process</div>
+                    </div>
+                </div>
+
+                <div class="presentation-grid">
+                    <div class="presentation-card reveal reveal-delay-1">
+                        <div class="card-icon">🌟</div>
+                        <h3>For Residents</h3>
+                        <p><strong>Barangay Reserve</strong> makes life easier for community members:</p>
+                        <ul>
+                            <li><strong>Book Anytime:</strong> Check facility availability 24 hours a day</li>
+                            <li><strong>Easy Booking:</strong> Reserve spaces with just a few taps</li>
+                            <li><strong>Clear Status:</strong> See if your booking is approved or pending</li>
+                            <li><strong>Mobile Payments:</strong> Upload receipt photos to confirm</li>
+                            <li><strong>First-Come:</strong> Fair system for everyone</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-2">
+                        <div class="card-icon">💼</div>
+                        <h3>For Officials</h3>
+                        <p><strong>Barangay Reserve</strong> helps officials work better:</p>
+                        <ul>
+                            <li><strong>Less Paperwork:</strong> Digital records replace manual logbooks</li>
+                            <li><strong>Quick Approval:</strong> Review and approve requests instantly</li>
+                            <li><strong>Real-time Updates:</strong> See all booking changes immediately</li>
+                            <li><strong>Revenue Tracking:</strong> Monitor facility income easily</li>
+                            <li><strong>Simple Management:</strong> One dashboard for everything</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-3">
+                        <div class="card-icon">�</div>
+                        <h3>For Barangay</h3>
+                        <p><strong>Barangay Reserve</strong> helps the whole community:</p>
+                        <ul>
+                            <li><strong>More Revenue:</strong> Better facility utilization increases income</li>
+                            <li><strong>Less Costs:</strong> Digital system reduces administrative work</li>
+                            <li><strong>Better Service:</strong> Modern system improves resident satisfaction</li>
+                            <li><strong>Transparent:</strong> Everyone can see facility schedules and usage</li>
+                            <li><strong>Professional:</strong> Modern technology improves barangay image</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-4">
+                        <div class="card-icon">🔮</div>
+                        <h3>For the Future</h3>
+                        <p><strong>Barangay Reserve</strong> prepares communities for tomorrow:</p>
+                        <ul>
+                            <li><strong>Digital Skills:</strong> Residents learn modern technology</li>
+                            <li><strong>Better Records:</strong> Complete history of facility usage</li>
+                            <li><strong>Growth Ready:</strong> System can expand as barangay grows</li>
+                            <li><strong>Community Building:</strong> Better services bring people together</li>
+                            <li><strong>Sustainable:</strong> Less paper and better resource use</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Abuse Handling -->
+            <section class="section reveal">
+                <div class="section-label">Security & Safety</div>
+                <h2 class="section-title">Keeping Things Fair & Safe</h2>
+                <p class="section-subtitle">
+                    Simple rules and systems to prevent abuse and protect everyone
+                </p>
+                
+                <div class="presentation-grid">
+                    <div class="presentation-card reveal reveal-delay-1">
+                        <div class="card-icon">🛡️</div>
+                        <h3>Safety Rules</h3>
+                        <p><strong>Barangay Reserve</strong> prevents problems with clear rules:</p>
+                        <ul>
+                            <li><strong>3-Strike System:</strong> Users get 3 warnings before being banned</li>
+                            <li><strong>Fake Receipt Check:</strong> Officials check if payment receipts are real</li>
+                            <li><strong>Payment Verification:</strong> Officials confirm correct payment amounts</li>
+                            <li><strong>Account Types:</strong> Different access for residents vs officials</li>
+                            <li><strong>Real-time Monitoring:</strong> Officials see all activities as they happen</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-2">
+                        <div class="card-icon">🔍</div>
+                        <h3>How We Monitor</h3>
+                        <p>Our system catches problems automatically:</p>
+                        <ul>
+                            <li><strong>Activity Tracking:</strong> Every booking action is recorded</li>
+                            <li><strong>Receipt Review:</strong> Officials check uploaded photos carefully</li>
+                            <li><strong>Pattern Detection:</strong> System spots suspicious booking behavior</li>
+                            <li><strong>User Reports:</strong> Community can report problems easily</li>
+                            <li><strong>Official Oversight:</strong> Barangay officials manage all requests</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-3">
+                        <div class="card-icon">⚖️</div>
+                        <h3>Consequences</h3>
+                        <p>What happens when someone breaks the rules:</p>
+                        <ul>
+                            <li><strong>First Strike:</strong> Violation recorded</li>
+                            <li><strong>Second Strike:</strong> Violation recorded</li>
+                            <li><strong>Third Strike:</strong> Permanent account ban</li>
+                        </ul>
+                    </div>
+
+                    <div class="presentation-card reveal reveal-delay-4">
+                        <div class="card-icon">🔐</div>
+                        <h3>Data Protection</h3>
+                        <p>How we keep everyone's information safe:</p>
+                        <ul>
+                            <li><strong>Secure Login:</strong> Gmail authentication protects accounts</li>
+                            <li><strong>Encrypted Data:</strong> All information stored securely</li>
+                            <li><strong>Access Control:</strong> Only right people see right data</li>
+                            <li><strong>Regular Backups:</strong> Data protected against loss</li>
+                            <li><strong>Privacy Protection:</strong> Personal information kept private</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Call to Action -->
+            <section class="section reveal">
+                <div class="section-label">Get Started</div>
+                <h2 class="section-title">Transform Your Barangay Today</h2>
+                <h3><i>Smart Booking. Fair Discounts. Empowered Barangay.</i></h3>
+                <p class="section-subtitle">
+                    Join the digital transformation revolution and bring your barangay services into the modern age
+                </p>
+                
+                <div class="marketing-grid">
+                    <div class="marketing-card reveal reveal-delay-1">
+                        <div class="marketing-icon">📱</div>
+                        <h3>Download the App</h3>
+                        <p>Available exclusively for Android devices. Experience the future of barangay facility management.</p>
+                    </div>
+                    <div class="marketing-card reveal reveal-delay-2">
+                        <div class="marketing-icon">📧</div>
+                        <h3>Contact Us</h3>
+                        <p>Get in touch with our team to learn more about implementation and training for your barangay.</p>
+                    </div>
+                    <div class="marketing-card reveal reveal-delay-3">
+                        <div class="marketing-icon">🎓</div>
+                        <h3>Training & Support</h3>
+                        <p>Comprehensive training programs for barangay officials and residents to ensure smooth adoption.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="nav-buttons">
+                <a href="index.html" class="btn btn-secondary">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+     
+    
+
+    <!-- ─── FOOTER ─── -->
+    <footer class="footer">
+        <div class="footer-brand">Barangay Reserve</div>
+        <p>Digital platform for modern barangay services.</p>
+        <p>&copy; 2026 Barangay Reserve. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="presentation.html">Presentation</a>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" onclick="scrollToTop()" aria-label="Scroll to top"></button>
+
+    <script>
+        // Enhanced scroll reveal with better detection
+        const observerOptions = {
+            threshold: 0.1, // Lower threshold for earlier detection
+            rootMargin: '0px 0px -50px 0px' // Start animation slightly before element is fully in view
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(el => {
+                if (el.isIntersecting) {
+                    // Prevent multiple animations
+                    if (!el.target.classList.contains('visible')) {
+                        // Add visible class immediately
+                        el.target.classList.add('visible');
+                        
+                        // Handle nested security and performance features
+                        if (el.target.classList.contains('presentation-card')) {
+                            const securityFeatures = el.target.querySelectorAll('.security-feature');
+                            const performanceFeatures = el.target.querySelectorAll('.performance-feature');
+                            
+                            // Animate security features with staggered delays
+                            securityFeatures.forEach((feature, index) => {
+                                setTimeout(() => {
+                                    feature.classList.add('reveal-visible');
+                                }, 200 + (index * 150)); // Longer stagger for better visibility
+                            });
+                            
+                            // Animate performance features with staggered delays
+                            performanceFeatures.forEach((feature, index) => {
+                                setTimeout(() => {
+                                    feature.classList.add('reveal-visible');
+                                }, 200 + (index * 150)); // Longer stagger for better visibility
+                            });
+                        }
+                    }
+                }
+            });
+        }, observerOptions);
+
+        // Observe all reveal elements
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Backup scroll-based animation for reliability
+        let lastScrollY = 0;
+        let scrollTimer;
+
+        function checkRevealElements() {
+            const reveals = document.querySelectorAll('.reveal:not(.visible)');
+            reveals.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                
+                // Reveal element when it's 80% visible
+                if (elementTop < windowHeight * 0.8) {
+                    element.classList.add('visible');
+                    
+                    // Handle nested elements
+                    if (element.classList.contains('presentation-card')) {
+                        const securityFeatures = element.querySelectorAll('.security-feature:not(.reveal-visible)');
+                        const performanceFeatures = element.querySelectorAll('.performance-feature:not(.reveal-visible)');
+                        
+                        securityFeatures.forEach((feature, index) => {
+                            setTimeout(() => {
+                                feature.classList.add('reveal-visible');
+                            }, 200 + (index * 150));
+                        });
+                        
+                        performanceFeatures.forEach((feature, index) => {
+                            setTimeout(() => {
+                                feature.classList.add('reveal-visible');
+                            }, 200 + (index * 150));
+                        });
+                    }
+                }
+            });
+        }
+
+        // Check on scroll with debouncing
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(() => {
+                checkRevealElements();
+            }, 50);
+            
+            // Scroll to top functionality
+            const scrollButton = document.querySelector('.scroll-to-top');
+            if (window.pageYOffset > 300) {
+                scrollButton.classList.add('visible');
+            } else {
+                scrollButton.classList.remove('visible');
+            }
+            
+            lastScrollY = window.pageYOffset;
+        });
+
+        // Initial check on page load
+        window.addEventListener('load', () => {
+            setTimeout(checkRevealElements, 100);
+        });
+
+        // Check on resize
+        window.addEventListener('resize', () => {
+            setTimeout(checkRevealElements, 100);
+        });
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

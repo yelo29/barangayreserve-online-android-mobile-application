@@ -13,7 +13,8 @@ import 'facility_edit_screen.dart';
 import 'official_calendar_screen.dart';
 
 class OfficialHomeTab extends StatefulWidget {
-  const OfficialHomeTab({super.key});
+  final bool isDarkMode;
+  const OfficialHomeTab({super.key, this.isDarkMode = false});
 
   @override
   State<OfficialHomeTab> createState() => _OfficialHomeTabState();
@@ -288,7 +289,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
             bookingStatuses: _buildFacilityBookingStatuses(facility), // Use facility-specific booking status
             pendingColor: Colors.yellow,
             bookedColor: Colors.green.shade200,
-            availableColor: Colors.grey.shade100,
+            availableColor: widget.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade100,
             selectedColor: Colors.blue,
             showTodayButton: false,
             currentUserEmail: _currentUser?['email'],
@@ -311,6 +312,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
             facility: facility,
             selectedDate: selectedDate,
             userData: currentUser,
+            isDarkMode: widget.isDarkMode,
           ),
         ),
       );
@@ -336,6 +338,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.isDarkMode ? Colors.grey.shade900 : Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -347,9 +350,9 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                     height: 300, // Fixed height for Quick Booking section
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.pink.shade50,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.pink.shade50,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.red.shade200),
+                      border: Border.all(color: widget.isDarkMode ? Colors.grey.shade700 : Colors.red.shade200),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,31 +361,31 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                           children: [
                             Icon(
                               Icons.flash_on,
-                              color: Colors.red.shade700,
+                              color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700,
                               size: 24,
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               'Quick Booking',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.red,
+                                color: widget.isDarkMode ? Colors.red.shade400 : Colors.red,
                               ),
                             ),
                             const Spacer(),
                             // Refresh button
                             IconButton(
                               onPressed: _refreshData,
-                              icon: Icon(Icons.refresh, color: Colors.red.shade700),
+                              icon: Icon(Icons.refresh, color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700),
                               tooltip: 'Refresh',
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Instant booking for officials (auto-approved)',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                          style: TextStyle(fontSize: 14, color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                         ),
                         const SizedBox(height: 16),
                         Expanded(
@@ -394,14 +397,14 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                       Icon(
                                         Icons.business,
                                         size: 64,
-                                        color: Colors.grey.shade400,
+                                        color: widget.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
                                         'No facilities found',
                                         style: TextStyle(
                                           fontSize: 18,
-                                          color: Colors.grey.shade600,
+                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -409,7 +412,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                         'Tap the + button to add your first facility',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey.shade500,
+                                          color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade500,
                                         ),
                                       ),
                                     ],
@@ -426,7 +429,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
-                                        color: Colors.blue.shade50,
+                                        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.blue.shade50,
                                         child: InkWell(
                                           onTap: () => _quickBookFacility(facility),
                                           borderRadius: BorderRadius.circular(12),
@@ -439,7 +442,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                       facility['main_photo_url'] ??
                                                       'location_city',
                                                   size: 40,
-                                                  color: Colors.red.shade600,
+                                                  color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade600,
                                                 ),
                                                 const SizedBox(width: 12),
                                                 Expanded(
@@ -450,10 +453,11 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                       Text(
                                                         facility['name'] ??
                                                             'Unknown Facility',
-                                                        style: const TextStyle(
+                                                        style: TextStyle(
                                                           fontSize: 16,
                                                           fontWeight:
                                                               FontWeight.bold,
+                                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                                                         ),
                                                       ),
                                                       const SizedBox(height: 4),
@@ -461,7 +465,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                         'Book entire day instantly',
                                                         style: TextStyle(
                                                           fontSize: 12,
-                                                          color: Colors.grey[600],
+                                                          color: widget.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                                         ),
                                                       ),
                                                     ],
@@ -474,7 +478,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                     vertical: 6,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.red.shade600,
+                                                    color: widget.isDarkMode ? Colors.red.shade700 : Colors.red.shade600,
                                                     borderRadius:
                                                         BorderRadius.circular(20),
                                                   ),
@@ -502,12 +506,12 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                   const SizedBox(height: 12),
                   // Facility Management Section
                   Container(
-                    height: 400, // Fixed height for Manage Facilities section
+                    height: 250, // Fixed height for Manage Facilities section
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: widget.isDarkMode ? Colors.grey.shade800 : Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(color: widget.isDarkMode ? Colors.grey.shade700 : Colors.orange.shade200),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,16 +520,16 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                           children: [
                             Icon(
                               Icons.settings,
-                              color: Colors.orange.shade700,
+                              color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange.shade700,
                               size: 24,
                             ),
                             const SizedBox(width: 8),
-                            const Text(
+                            Text(
                               'Manage Facilities',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange,
+                                color: widget.isDarkMode ? Colors.orange.shade400 : Colors.orange.shade700,
                               ),
                             ),
                           ],
@@ -540,7 +544,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                       'Add your first facility using the + button',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey.shade500,
+                                        color: widget.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade500,
                                       ),
                                     ),
                                   ),
@@ -556,6 +560,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
+                                        color: widget.isDarkMode ? Colors.grey.shade700 : Colors.white,
                                         child: InkWell(
                                           onTap: () => _editFacility(facility),
                                           borderRadius: BorderRadius.circular(12),
@@ -568,7 +573,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                       facility['main_photo_url'] ??
                                                       'location_city',
                                                   size: 32,
-                                                  color: Colors.red.shade700,
+                                                  color: widget.isDarkMode ? Colors.red.shade400 : Colors.red.shade700,
                                                 ),
                                                 const SizedBox(width: 12),
                                                 Expanded(
@@ -579,21 +584,16 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                       Text(
                                                         facility['name']?.toString() ??
                                                             'Unknown Facility',
-                                                        style: const TextStyle(
+                                                        style: TextStyle(
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 14,
+                                                          color: widget.isDarkMode ? Colors.white : Colors.black87,
                                                         ),
                                                         maxLines: 2,
                                                         overflow: TextOverflow.ellipsis,
                                                       ),
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        '₱${facility['price']?.toString() ?? '0'}',
-                                                        style: const TextStyle(
-                                                          color: Colors.grey,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
+                                                      
+                                                      
                                                       const SizedBox(height: 8),
                                                       Container(
                                                         child: Row(
@@ -605,15 +605,15 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                                 vertical: 2,
                                                               ),
                                                               decoration: BoxDecoration(
-                                                                color: Colors.red.shade100,
+                                                                color: widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade100,
                                                                 borderRadius: BorderRadius.circular(6),
                                                               ),
                                                               child: GestureDetector(
                                                                 onTap: () => _editFacility(facility),
-                                                                child: const Text(
+                                                                child: Text(
                                                                   'Edit',
                                                                   style: TextStyle(
-                                                                    color: Colors.red,
+                                                                    color: widget.isDarkMode ? Colors.red.shade400 : Colors.red,
                                                                     fontSize: 10,
                                                                     fontWeight: FontWeight.bold,
                                                                   ),
@@ -627,15 +627,15 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                                 vertical: 2,
                                                               ),
                                                               decoration: BoxDecoration(
-                                                                color: Colors.blue.shade100,
+                                                                color: widget.isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade100,
                                                                 borderRadius: BorderRadius.circular(6),
                                                               ),
                                                               child: GestureDetector(
                                                                 onTap: () => _regenerateTimeSlots(facility),
-                                                                child: const Text(
+                                                                child: Text(
                                                                   'Slots',
                                                                   style: TextStyle(
-                                                                    color: Colors.blue,
+                                                                    color: widget.isDarkMode ? Colors.blue.shade400 : Colors.blue,
                                                                     fontSize: 10,
                                                                     fontWeight: FontWeight.bold,
                                                                   ),
@@ -649,15 +649,15 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                                                                 vertical: 2,
                                                               ),
                                                               decoration: BoxDecoration(
-                                                                color: Colors.red.shade100,
+                                                                color: widget.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : Colors.red.shade100,
                                                                 borderRadius: BorderRadius.circular(6),
                                                               ),
                                                               child: GestureDetector(
                                                                 onTap: () => _deleteFacility(facility),
-                                                                child: const Text(
+                                                                child: Text(
                                                                   'Delete',
                                                                   style: TextStyle(
-                                                                    color: Colors.red,
+                                                                    color: widget.isDarkMode ? Colors.red.shade400 : Colors.red,
                                                                     fontSize: 10,
                                                                     fontWeight: FontWeight.bold,
                                                                   ),
@@ -687,7 +687,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
             ), // SingleChildScrollView
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewFacility,
-        backgroundColor: Colors.red,
+        backgroundColor: widget.isDarkMode ? Colors.red.shade700 : Colors.red,
         child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Add New Facility',
       ),
@@ -698,7 +698,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OfficialCalendarScreen(facility: facility),
+        builder: (context) => OfficialCalendarScreen(facility: facility, isDarkMode: widget.isDarkMode),
       ),
     );
   }
@@ -708,7 +708,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
     final bool? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const FacilityEditScreen(facility: null),
+        builder: (context) => FacilityEditScreen(facility: null, isDarkMode: widget.isDarkMode),
       ),
     );
 
@@ -725,7 +725,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
     final bool? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FacilityEditScreen(facility: facility),
+        builder: (context) => FacilityEditScreen(facility: facility, isDarkMode: widget.isDarkMode),
       ),
     );
 
@@ -742,12 +742,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Facility'),
-        content: Text('Are you sure you want to delete "${facility['name']}"?\n\nThis action cannot be undone.'),
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+        title: Text('Delete Facility', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        content: Text('Are you sure you want to delete "${facility['name']}"?\n\nThis action cannot be undone.', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -763,12 +764,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
+        builder: (context) => AlertDialog(
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
           content: Row(
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Deleting facility...'),
+              Text('Deleting facility...', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
             ],
           ),
         ),
@@ -785,10 +787,11 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(result['success'] ? 'Success' : 'Error'),
+            backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+            title: Text(result['success'] ? 'Success' : 'Error', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
             content: Text(result['success'] 
                 ? 'Facility deleted successfully!' 
-                : result['message'] ?? 'Failed to delete facility'),
+                : result['message'] ?? 'Failed to delete facility', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             actions: [
               TextButton(
                 onPressed: () {
@@ -798,7 +801,7 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
                     _loadFacilities();
                   }
                 },
-                child: const Text('OK'),
+                child: Text('OK', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
               ),
             ],
           ),
@@ -811,12 +814,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to delete facility: $e'),
+            backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+            title: Text('Error', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+            content: Text('Failed to delete facility: $e', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+                child: Text('OK', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
               ),
             ],
           ),
@@ -830,12 +834,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
     final bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Regenerate Time Slots'),
-        content: Text('Are you sure you want to regenerate time slots for "${facility['name']}"?\n\nThis will replace all existing time slots with new ones based on the facility type.'),
+        backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+        title: Text('Regenerate Time Slots', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+        content: Text('Are you sure you want to regenerate time slots for "${facility['name']}"?\n\nThis will replace all existing time slots with new ones based on the facility type.', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -851,12 +856,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
+        builder: (context) => AlertDialog(
+          backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
           content: Row(
             children: [
               CircularProgressIndicator(),
               SizedBox(width: 20),
-              Text('Regenerating time slots...'),
+              Text('Regenerating time slots...', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
             ],
           ),
         ),
@@ -873,14 +879,15 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(result['success'] ? 'Success' : 'Error'),
+            backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+            title: Text(result['success'] ? 'Success' : 'Error', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
             content: Text(result['success'] 
                 ? 'Time slots regenerated successfully!\nCreated: ${result['time_slots_created']} slots' 
-                : result['message'] ?? 'Failed to regenerate time slots'),
+                : result['message'] ?? 'Failed to regenerate time slots', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+                child: Text('OK', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
               ),
             ],
           ),
@@ -893,12 +900,13 @@ class _OfficialHomeTabState extends State<OfficialHomeTab> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to regenerate time slots: $e'),
+            backgroundColor: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+            title: Text('Error', style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black87)),
+            content: Text('Failed to regenerate time slots: $e', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
+                child: Text('OK', style: TextStyle(color: widget.isDarkMode ? Colors.grey.shade300 : Colors.black87)),
               ),
             ],
           ),

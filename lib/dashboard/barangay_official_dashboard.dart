@@ -3,6 +3,7 @@ import 'tabs/official/official_home_tab.dart';
 import 'tabs/official/official_booking_requests_tab.dart';
 import 'tabs/official/authentication_requests_tab.dart';
 import 'tabs/official/official_profile_tab.dart';
+import '../services/theme_service.dart';
 
 class BarangayOfficialDashboard extends StatefulWidget {
   final Function(BuildContext) onLogout;
@@ -15,13 +16,26 @@ class BarangayOfficialDashboard extends StatefulWidget {
 
 class _BarangayOfficialDashboardState extends State<BarangayOfficialDashboard> {
   int _selectedIndex = 0;
+  final ThemeService _themeService = ThemeService();
+  bool _isDarkMode = false;
 
-  List<Widget> get _widgetOptions => <Widget>[
-    const OfficialHomeTab(),
-    const OfficialBookingRequestsTab(),
-    const OfficialAuthenticationTab(userData: {}),
-    OfficialProfileTab(onLogout: widget.onLogout),
+  List<Widget> _widgetOptions() => <Widget>[
+    OfficialHomeTab(isDarkMode: _isDarkMode),
+    OfficialBookingRequestsTab(isDarkMode: _isDarkMode),
+    OfficialAuthenticationTab(userData: {}, isDarkMode: _isDarkMode),
+    OfficialProfileTab(onLogout: widget.onLogout, isDarkMode: _isDarkMode),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _themeService.addListener(() {
+      setState(() {
+        _isDarkMode = _themeService.isDarkMode;
+      });
+    });
+    _isDarkMode = _themeService.isDarkMode;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -47,13 +61,23 @@ class _BarangayOfficialDashboardState extends State<BarangayOfficialDashboard> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Barangay Official Dashboard'),
-          backgroundColor: Colors.red,
+          backgroundColor: _isDarkMode ? Colors.grey.shade900 : Colors.red,
           foregroundColor: Colors.white,
           automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
+              onPressed: () {
+                _themeService.toggleTheme();
+              },
+              tooltip: 'Toggle Dark Mode',
+            ),
+          ],
         ),
-        body: _widgetOptions.elementAt(_selectedIndex),
+        body: _widgetOptions().elementAt(_selectedIndex),
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
+          backgroundColor: _isDarkMode ? Colors.grey.shade900 : Colors.white,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -73,8 +97,8 @@ class _BarangayOfficialDashboardState extends State<BarangayOfficialDashboard> {
             ),
           ],
           currentIndex: _selectedIndex,
-          selectedItemColor: Colors.red,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: _isDarkMode ? Colors.red.shade300 : Colors.red,
+          unselectedItemColor: _isDarkMode ? Colors.grey.shade500 : Colors.grey,
           onTap: _onItemTapped,
         ),
       ),
@@ -86,21 +110,22 @@ class _BarangayOfficialDashboardState extends State<BarangayOfficialDashboard> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Logout'),
-          content: const Text('Are you sure you want to logout?'),
+          backgroundColor: _isDarkMode ? Colors.grey.shade800 : Colors.white,
+          title: Text('Confirm Logout', style: TextStyle(color: _isDarkMode ? Colors.white : Colors.black87)),
+          content: Text('Are you sure you want to logout?', style: TextStyle(color: _isDarkMode ? Colors.grey.shade300 : Colors.black87)),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(false); // Cancel
               },
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(color: _isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(true); // OK
                 widget.onLogout(context); // Call logout callback
               },
-              child: const Text('OK'),
+              child: Text('OK', style: TextStyle(color: _isDarkMode ? Colors.grey.shade300 : Colors.black87)),
             ),
           ],
         );

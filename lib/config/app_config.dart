@@ -1,52 +1,44 @@
 /// Dynamic App Configuration for Global Server Access
-/// Laptop as server with barangay.db database
+/// Cloudflare Tunnel for Global Access
 
 class AppConfig {
-  // Use actual computer IP and correct port from server log
-  static String _baseUrl = 'http://192.168.100.4:8000';
+  // Cloudflare tunnel URL (your permanent domain)
+  static String _baseUrl = 'https://barangayreserve.dpdns.org';
   
   /// Get the current base URL
   static String get baseUrl => _baseUrl;
   
-  /// Set base URL dynamically (for runtime configuration)
-  static void setBaseUrl(String url) {
-    _baseUrl = url;
+  /// Check if URL uses Cloudflare
+  static bool isCloudflareUrl(String url) {
+    return url.contains('trycloudflare.com') || url.contains('cloudflareaccess.com');
   }
   
-  /// Auto-detect server URL from multiple sources
-  static String autoDetectServerUrl() {
-    // Priority order: Environment variable > stored URL > default
-    return _baseUrl;
+  /// Extract domain from URL
+  static String extractDomain(String url) {
+    try {
+      Uri uri = Uri.parse(url);
+      return uri.host;
+    } catch (e) {
+      return url;
+    }
   }
   
-  /// Common server configurations
-  static const String loginEndpoint = '/api/auth/login';
-  static const String registerEndpoint = '/api/auth/register';
-  static const String userProfileEndpoint = '/api/users/profile';
-  static const String facilitiesEndpoint = '/api/facilities';
-  static const String bookingsEndpoint = '/api/bookings';
-  static const String authenticationRequestsEndpoint = '/api/authentication-requests';
-  static const String barangayEventsEndpoint = '/api/barangay-events';
-  static const String uploadReceiptEndpoint = '/api/upload-receipt';
-  
-  /// Validate URL format
+  /// Check if URL is valid
   static bool isValidUrl(String url) {
     try {
-      final uri = Uri.parse(url);
-      return uri.hasScheme && (uri.hasAuthority || uri.host.isNotEmpty);
+      Uri uri = Uri.parse(url);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
     } catch (e) {
       return false;
     }
   }
   
-  /// Extract domain from URL (for DuckDNS)
-  static String extractDomain(String url) {
-    try {
-      final uri = Uri.parse(url);
-      return uri.host;
-    } catch (e) {
-      return '';
-    }
+  /// Check if URL uses Ngrok
+  static bool isNgrokUrl(String url) {
+    final domain = extractDomain(url);
+    return domain.contains('ngrok.io') ||
+           domain.contains('ngrok.free.app') ||
+           domain.contains('ngrok-free.dev');
   }
   
   /// Check if URL uses DuckDNS
@@ -55,18 +47,12 @@ class AppConfig {
     return domain.contains('duckdns.org');
   }
   
-  /// Convert HTTP to HTTPS for production
-  static String toHttps(String url) {
-    if (url.startsWith('http://')) {
-      return url.replaceFirst('http://', 'https://');
-    }
-    return url;
-  }
-  
-  /// Get current configuration info
+  /// Get configuration info
   static Map<String, dynamic> getConfigInfo() {
     return {
       'baseUrl': _baseUrl,
+      'isCloudflare': isCloudflareUrl(_baseUrl),
+      'isNgrok': isNgrokUrl(_baseUrl),
       'isDuckDns': isDuckDnsUrl(_baseUrl),
       'domain': extractDomain(_baseUrl),
       'isValid': isValidUrl(_baseUrl),

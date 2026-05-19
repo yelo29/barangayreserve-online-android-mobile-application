@@ -1,0 +1,11 @@
+{
+  "ingress": [
+    {
+      "hostname": "barangay-reserve.trycloudflare.com",
+      "service": "http://localhost:8000"
+    },
+    {
+      "service": "http_status:404"
+    }
+  ]
+}

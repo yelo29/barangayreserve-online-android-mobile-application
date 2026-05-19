@@ -8,9 +8,19 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+import random
+import string
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from config import Config
+from email_service import email_service
+import requests
+import jwt
+import time
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 # Dynamic CORS configuration for DuckDNS
@@ -102,8 +112,71 @@ def init_db():
         )
     ''')
     
+    # Create OTP table for email verification
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS email_otps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL,
+            otp_code TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            is_used BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (email) REFERENCES users (email)
+        )
+    ''')
+    
     conn.commit()
     conn.close()
+
+# Email service configuration
+EMAIL_CONFIG = {
+    'smtp_server': 'smtp.gmail.com',
+    'smtp_port': 587,
+    'email': 'leo052904@gmail.com',
+    'password': 'tqlf yzje rxkc lnkn'
+}
+
+def generate_otp():
+    """Generate 6-digit OTP code"""
+    return ''.join(random.choices(string.digits, k=6))
+
+def send_otp_email(email, otp_code):
+    """Send OTP code to user's email"""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_CONFIG['email']
+        msg['To'] = email
+        msg['Subject'] = 'Barangay Reserve - Email Verification Code'
+        
+        body = f'''
+        Hello,
+        
+        Your email verification code for Barangay Reserve is:
+        
+        {otp_code}
+        
+        This code will expire in 10 minutes.
+        
+        If you didn't request this code, please ignore this email.
+        
+        Thank you,
+        Barangay Reserve Team
+        '''
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP(EMAIL_CONFIG['smtp_server'], EMAIL_CONFIG['smtp_port'])
+        server.starttls()
+        server.login(EMAIL_CONFIG['email'], EMAIL_CONFIG['password'])
+        text = msg.as_string()
+        server.sendmail(EMAIL_CONFIG['email'], email, text)
+        server.quit()
+        
+        print(f"✅ OTP email sent to {email}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send OTP email: {e}")
+        return False
 
 # Initialize database on startup
 init_db()
@@ -154,8 +227,8 @@ migrate_database()
 
 # API Routes
 
-@app.route('/')
-def home():
+@app.route('/api/status')
+def server_status():
     return jsonify({
         'message': 'Barangay Reserve Server Running!',
         'status': 'online',
@@ -173,7 +246,8 @@ def get_current_user():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT id, email, full_name, role, verified, discount_rate, contact_number, address, created_at FROM users WHERE email = ?', (email,))
+    # Use the same query as Gmail auth for consistency
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
     user = cursor.fetchone()
     
     conn.close()
@@ -184,19 +258,19 @@ def get_current_user():
             'user': {
                 'id': user[0],
                 'email': user[1],
-                'full_name': user[2],
-                'role': user[3],
-                'verified': user[4],
-                'verification_type': None,  # Default since column doesn't exist
-                'discount_rate': user[5],
-                'contact_number': user[6],
-                'address': user[7],
-                'profile_photo_url': None,  # Default since column doesn't exist
-                'is_active': True,  # Default
-                'email_verified': True,  # Default
-                'last_login': None,  # Default
-                'created_at': user[8],
-                'updated_at': None,  # Default
+                'full_name': user[3],  # Fixed: full_name is at index 3
+                'role': user[4],        # Fixed: role is at index 4
+                'verified': bool(user[5]),  # Fixed: verified is at index 5, convert to bool
+                'verification_type': user[6],  # Fixed: verification_type is at index 6
+                'discount_rate': user[7],    # Fixed: discount_rate is at index 7
+                'contact_number': user[8],    # Fixed: contact_number is at index 8
+                'address': user[9],          # Fixed: address is at index 9
+                'profile_photo_url': user[10],  # Fixed: profile_photo_url is at index 10
+                'is_active': bool(user[12]),  # Fixed: is_active is at index 12
+                'email_verified': bool(user[13]),  # Fixed: email_verified is at index 13
+                'last_login': user[14],       # Fixed: last_login is at index 14
+                'created_at': user[15],       # Fixed: created_at is at index 15
+                'updated_at': user[16],       # Fixed: updated_at is at index 16
             }
         })
     else:
@@ -252,7 +326,7 @@ def get_bookings():
                        b.status, b.priority_level, b.approved_by, b.approved_at,
                        b.rejection_reason, b.is_competitive, b.competing_booking_ids,
                        b.competition_resolved, b.created_at, b.updated_at,
-                       f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                       f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
@@ -291,7 +365,7 @@ def get_bookings():
                 'status', 'priority_level', 'approved_by', 'approved_at',
                 'rejection_reason', 'is_competitive', 'competing_booking_ids',
                 'competition_resolved', 'created_at', 'updated_at',
-                'facility_name', 'full_name', 'user_email', 'verified', 'discount_rate', 'user_role'
+                'facility_name', 'full_name', 'user_email', 'verified', 'discount_rate', 'user_role', 'profile_photo_url'
             ]
             
             for booking in bookings:
@@ -306,7 +380,7 @@ def get_bookings():
             
             # Build query with optional facility and date filtering
             query = '''
-                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
@@ -339,31 +413,54 @@ def get_bookings():
                 booking_dict = dict(booking)
                 
                 # Debug logging for privacy check
-                print(f"🔍 PRIVACY CHECK: booking_email='{booking_dict['user_email']}' vs user_email='{user_email}'")
-                
-                # Remove sensitive information for residents (but keep email for official detection)
-                if booking_dict['user_email'] and user_email and booking_dict['user_email'].lower().strip() != user_email.lower().strip():
-                    # Store original email for official detection
-                    original_email = booking_dict['user_email']
+                # Only apply privacy masking for non-official users
+                if user_role != 'official':
+                    # Get user_id for current user
+                    current_user_id = None
+                    if user_email:
+                        cursor.execute('SELECT id FROM users WHERE email = ?', (user_email,))
+                        user_result = cursor.fetchone()
+                        if user_result:
+                            current_user_id = user_result[0]  # Fixed: Access tuple by index, not dict key
                     
-                    # Remove sensitive details for other users' bookings
-                    booking_dict['full_name'] = 'Reserved'
-                    booking_dict['user_email'] = 'private'
-                    booking_dict['contact_number'] = 'private'
-                    booking_dict['contact_address'] = 'private'
-                    booking_dict['receipt_base64'] = None
-                    booking_dict['purpose'] = 'Private Booking'
+                    is_own_booking = (current_user_id and booking_dict['user_id'] == current_user_id and 
+                                    booking_dict['user_email'] and user_email and 
+                                    booking_dict['user_email'].lower().strip() == user_email.lower().strip())
                     
-                    # Add a flag for official detection (preserves original email logic)
-                    booking_dict['is_official_booking'] = (
-                        original_email and (
-                            'official' in original_email or 
-                            'barangay' in original_email or 
-                            'admin' in original_email
-                        )
-                    )
-                    
-                    print(f"🔍 PRIVACY APPLIED: Masked booking for user {original_email}")
+                    if not is_own_booking:
+                        # Apply privacy masking for other residents' bookings
+                        if booking_dict['user_email'] and user_email and booking_dict['user_email'].lower().strip() != user_email.lower().strip():
+                            original_email = booking_dict['user_email']
+                            
+                            # Remove sensitive details but keep essential info
+                            booking_dict['full_name'] = 'Private' if booking_dict['full_name'] in ['None', '', 'N/A', 'Unknown'] else booking_dict['full_name']
+                            booking_dict['contact_number'] = 'Private' if booking_dict['contact_number'] in ['None', '', 'N/A', 'Unknown'] else booking_dict['contact_number']
+                            booking_dict['contact_address'] = 'Private' if booking_dict['contact_address'] in ['None', '', 'N/A', 'Unknown'] else booking_dict['contact_address']
+                            
+                            # Only mask receipt if it exists
+                            if booking_dict.get('receipt_base64'):
+                                booking_dict['receipt_base64'] = '[RECEIPT HIDDEN FOR PRIVACY]'
+                            
+                            # Mask purpose only if it contains sensitive info
+                            if booking_dict.get('purpose') and any(word in booking_dict.get('purpose', '').lower() for word in ['private', 'confidential', 'secret']):
+                                booking_dict['purpose'] = 'Private Purpose'
+                            else:
+                                booking_dict['purpose'] = booking_dict.get('purpose', '')
+                            
+                            # Store original email for official detection
+                            booking_dict['original_email'] = booking_dict['user_email']
+                            
+                            # Add flag for official detection
+                            booking_dict['is_official_booking'] = (
+                                'official' in original_email or 
+                                'barangay' in original_email or 
+                                'admin' in original_email
+                            )
+                            print(f"🔍 PRIVACY APPLIED: Masked booking for user {original_email}")
+                        else:
+                            print(f"🔍 PRIVACY NOT APPLIED: User can see full booking details")
+                    else:
+                        print(f"🔍 PRIVACY NOT APPLIED: User can see full booking details")
                 else:
                     print(f"🔍 PRIVACY NOT APPLIED: User can see full booking details")
                 
@@ -375,7 +472,7 @@ def get_bookings():
             
             # Build query with optional facility and date filtering
             query = '''
-                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role
+                SELECT b.*, f.name as facility_name, u.full_name, u.email as user_email, u.verified, u.discount_rate, u.role as user_role, u.profile_photo_url
                 FROM bookings b
                 LEFT JOIN facilities f ON b.facility_id = f.id
                 LEFT JOIN users u ON b.user_id = u.id
@@ -521,9 +618,67 @@ def update_booking_status(booking_id):
             ''', (new_status, rejection_type, booking_id))
             print(f"🔍 DEBUG: Updated booking {booking_id} status and type")
         
+        # 📧 Send email notifications for status changes
+        try:
+            # Get user and booking details for email
+            cursor.execute('''
+                SELECT u.email, u.full_name, f.name as facility_name, b.booking_date, b.start_time, b.booking_reference
+                FROM bookings b
+                JOIN users u ON b.user_id = u.id
+                JOIN facilities f ON b.facility_id = f.id
+                WHERE b.id = ?
+            ''', (booking_id,))
+            
+            booking_details = cursor.fetchone()
+            if booking_details:
+                user_email, user_name, facility_name, booking_date, start_time, booking_reference = booking_details
+                
+                booking_info = {
+                    'facility_name': facility_name,
+                    'booking_date': booking_date,
+                    'timeslot': start_time,  # Use start_time as timeslot
+                    'booking_reference': booking_reference
+                }
+                
+                if new_status == 'rejected':
+                    # Send rejection email
+                    email_service.send_booking_rejection_email(
+                        recipient_email=user_email,
+                        recipient_name=user_name,
+                        booking_details=booking_info,
+                        rejection_reason=rejection_reason or "Booking rejected by administrator",
+                        rejection_type=rejection_type
+                    )
+                    print(f"📧 Rejection email sent to {user_email}")
+                    
+                elif new_status == 'approved':
+                    # Send approval email
+                    email_service.send_booking_approval_email(
+                        recipient_email=user_email,
+                        recipient_name=user_name,
+                        booking_details=booking_info
+                    )
+                    print(f"📧 Approval email sent to {user_email}")
+                    
+        except Exception as email_error:
+            print(f"❌ Error sending email notification: {email_error}")
+            # Don't fail the booking update if email fails
+        
         # If approving, automatically reject other pending bookings for the same time slot
         if new_status == 'approved' and current_status == 'pending':
             print(f"🏆 Approving booking {booking_id} and rejecting competitors for {facility_id} {date} {timeslot}")
+            
+            # Get details of competing bookings for email notifications
+            cursor.execute('''
+                SELECT b.id, u.email, u.full_name, f.name as facility_name, b.booking_date, b.start_time, b.booking_reference
+                FROM bookings b
+                JOIN users u ON b.user_id = u.id
+                JOIN facilities f ON b.facility_id = f.id
+                WHERE b.facility_id = ? AND b.booking_date = ? AND b.start_time = ? 
+                AND b.user_id != ? AND b.status = 'pending'
+            ''', (facility_id, date, timeslot, user_id))
+            
+            competing_bookings = cursor.fetchall()
             
             cursor.execute('''
                 UPDATE bookings 
@@ -534,6 +689,31 @@ def update_booking_status(booking_id):
             
             rejected_count = cursor.rowcount
             print(f"🚫 Auto-rejected {rejected_count} competing bookings")
+            
+            # 📧 Send rejection emails to competing bookings
+            for competing_booking in competing_bookings:
+                try:
+                    comp_booking_id, comp_email, comp_name, comp_facility, comp_date, comp_start_time, comp_reference = competing_booking
+                    
+                    comp_booking_info = {
+                        'facility_name': comp_facility,
+                        'booking_date': comp_date,
+                        'timeslot': comp_start_time,  # Use start_time as timeslot
+                        'booking_reference': comp_reference
+                    }
+                    
+                    email_service.send_booking_rejection_email(
+                        recipient_email=comp_email,
+                        recipient_name=comp_name,
+                        booking_details=comp_booking_info,
+                        rejection_reason="Your booking was automatically rejected because another booking was approved for the same time slot.",
+                        rejection_type="auto_rejection"
+                    )
+                    print(f"📧 Auto-rejection email sent to {comp_email}")
+                    
+                except Exception as email_error:
+                    print(f"❌ Error sending auto-rejection email: {email_error}")
+                    # Don't fail the booking update if email fails
         
         conn.commit()
         conn.close()
@@ -542,6 +722,73 @@ def update_booking_status(booking_id):
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/bookings/check-conflict', methods=['POST'])
+def check_booking_conflict():
+    """Check if there's a booking conflict for the given facility, date, and time"""
+    try:
+        data = request.get_json()
+        print(f"🔍 DEBUG: Checking booking conflict for: {data}")
+        
+        # Validate required fields
+        required_fields = ['facility_id', 'date', 'timeslot', 'user_email']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Get user_id from email
+        cursor.execute('SELECT id FROM users WHERE email = ?', (data['user_email'],))
+        user_result = cursor.fetchone()
+        
+        if not user_result:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        user_id = user_result[0]
+        
+        # Check for existing bookings at the same time (excluding user's own bookings)
+        cursor.execute('''
+            SELECT id, user_email, created_at, status
+            FROM bookings 
+            WHERE facility_id = ? 
+            AND date = ? 
+            AND timeslot = ?
+            AND user_email != ?
+            AND status IN ('pending', 'approved')
+            ORDER BY created_at DESC
+        ''', (data['facility_id'], data['date'], data['timeslot'], data['user_email']))
+        
+        existing_bookings = cursor.fetchall()
+        print(f"🔍 DEBUG: Found {len(existing_bookings)} existing bookings for this time slot")
+        
+        conn.close()
+        
+        if existing_bookings:
+            # Return conflict information
+            latest_booking = existing_bookings[0]
+            return jsonify({
+                'success': True,
+                'has_conflict': True,
+                'conflict_info': {
+                    'booking_id': latest_booking[0],
+                    'user_email': latest_booking[1],
+                    'created_at': latest_booking[2],
+                    'status': latest_booking[3],
+                    'message': 'We are very sorry but someone already booked that certain Time. Please pick a different time instead'
+                }
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'has_conflict': False,
+                'message': 'Time slot is available'
+            })
+            
+    except Exception as e:
+        print(f"❌ Error checking booking conflict: {e}")
+        return jsonify({'success': False, 'message': f'Error checking conflict: {str(e)}'}), 500
 
 @app.route('/api/bookings', methods=['POST'])
 def create_booking():
@@ -629,7 +876,8 @@ def create_booking():
                 # For ALL DAY bookings, find ALL resident bookings on this date
                 print(f"🔍 DEBUG: ALL DAY query - facility_id: {data['facility_id']}, date: {data['date']}, user_id: {user_id}")
                 cursor.execute('''
-                    SELECT b.id, b.user_id, b.start_time, b.end_time, b.status, u.email as user_email, u.full_name
+                    SELECT b.id, b.user_id, b.start_time, b.end_time, b.status, b.purpose, b.booking_reference,
+                           u.email as user_email, u.full_name
                     FROM bookings b
                     LEFT JOIN users u ON b.user_id = u.id
                     WHERE b.facility_id = ? 
@@ -641,7 +889,8 @@ def create_booking():
             else:
                 # For specific time slots, find exact matches
                 cursor.execute('''
-                    SELECT b.id, b.user_id, b.start_time, b.end_time, b.status, u.email as user_email, u.full_name
+                    SELECT b.id, b.user_id, b.start_time, b.end_time, b.status, b.purpose, b.booking_reference,
+                           u.email as user_email, u.full_name
                     FROM bookings b
                     LEFT JOIN users u ON b.user_id = u.id
                     WHERE b.facility_id = ? 
@@ -655,43 +904,102 @@ def create_booking():
             overlapping_bookings = cursor.fetchall()
             print(f"🔍 DEBUG: Found {len(overlapping_bookings)} overlapping resident bookings")
             
-            # Auto-reject overlapping resident bookings with apology message
-            apology_message = """Dear Resident,
-
-We apologize but your booking has been automatically cancelled due to an official Barangay Event.
-
-Your payment will be refunded within 3-5 business days.
-
-Please check your SMS and Email for more Updates.
-
-Thank you for your understanding and cooperation.
-
-Barangay Management"""
+            # Get facility name for emails
+            cursor.execute('SELECT name FROM facilities WHERE id = ?', (data['facility_id'],))
+            facility_result = cursor.fetchone()
+            facility_name = facility_result[0] if facility_result else 'Unknown Facility'
             
+            # Get official user details for emails
+            cursor.execute('SELECT full_name, contact_number FROM users WHERE id = ?', (user_id,))
+            official_result = cursor.fetchone()
+            official_name = official_result[0] if official_result else 'Barangay Official'
+            official_contact = official_result[1] if official_result and len(official_result) > 1 else '0912-345-6789'
+            
+            # Auto-reject overlapping resident bookings with proper email service
             for booking in overlapping_bookings:
                 # Extract resident booking info
                 booking_id = booking[0]
-                resident_email = booking[5] if booking[5] else 'Unknown'
-                resident_name = booking[6] if booking[6] else 'Resident'
-                resident_timeslot = booking[2]  # Use just the start_time (already contains full timeslot)
+                resident_user_id = booking[1]
+                resident_start_time = booking[2]
+                resident_end_time = booking[3]
                 resident_status = booking[4]  # Get original status (pending/approved)
+                resident_purpose = booking[5] if len(booking) > 5 and booking[5] else 'Resident booking'
+                booking_reference = booking[6] if len(booking) > 6 and booking[6] else f'BR{booking_id}'
+                resident_email = booking[7] if len(booking) > 7 and booking[7] else 'unknown@email.com'
+                resident_name = booking[8] if len(booking) > 8 and booking[8] else 'Unknown Resident'
                 
-                print(f"🚫 AUTO-REJECTING {resident_status.upper()} booking {booking_id} for {resident_name} ({resident_email}) - Time: {resident_timeslot}")
+                print(f"🚫 AUTO-REJECTING {resident_status.upper()} booking {booking_id} - Time: {resident_start_time}")
                 
-                # Update resident booking to rejected with apology
+                # Validate data before sending email
+                if not resident_email or resident_email == 'unknown@email.com':
+                    print(f"⚠️ WARNING: Invalid email for resident {resident_user_id}: {resident_email}")
+                    continue
+                
+                if not resident_name or resident_name == 'Unknown Resident':
+                    print(f"⚠️ WARNING: Invalid name for resident {resident_user_id}: {resident_name}")
+                    continue
+                    
+                # Prepare booking details for overlap email
+                overlap_booking_details = {
+                    'facility_name': facility_name,
+                    'booking_date': data['date'],
+                    'timeslot': f"{resident_start_time} - {resident_end_time}",
+                    'start_time': resident_start_time,
+                    'end_time': resident_end_time,
+                    'purpose': resident_purpose,  # Use actual purpose from database
+                    'status': 'rejected',
+                    'booking_reference': booking_reference,
+                    'submitted_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Prepare official booking details for email
+                official_booking_details = {
+                    'facility_name': facility_name,
+                    'booking_date': data['date'],
+                    'timeslot': 'ALL DAY',
+                    'start_time': 'ALL DAY',
+                    'end_time': 'ALL DAY',
+                    'purpose': data.get('purpose', 'Official barangay business'),
+                    'status': 'approved',
+                    'booking_reference': f'BR{datetime.now().strftime("%Y%m%d%H%M%S")}{user_id}',
+                    'official_name': official_name,
+                    'official_contact': official_contact,
+                    'submitted_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Send overlap email to resident
+                try:
+                    overlap_sent = email_service.send_booking_overlap_email(
+                        resident_email=resident_email,
+                        resident_name=resident_name,
+                        original_booking=overlap_booking_details,
+                        official_booking=official_booking_details
+                    )
+                    
+                    print(f"📧 Overlap email sent to {resident_email}: {overlap_sent}")
+                    
+                except Exception as email_error:
+                    print(f"❌ Error sending overlap email to {resident_email}: {email_error}")
+                
+                # Update resident booking to rejected with proper reason
                 cursor.execute('''
                     UPDATE bookings 
                     SET status = 'rejected', 
-                        rejection_reason = ?,
+                        rejection_reason = 'OFFICIAL_OVERLAP',
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                ''', (apology_message, booking_id))
+                ''', (booking_id,))
                 
                 rejected_resident_bookings.append({
                     'booking_id': booking_id,
+                    'booking_reference': booking_reference,
                     'resident_name': resident_name,
                     'resident_email': resident_email,
-                    'timeslot': resident_timeslot  # Use resident's actual time slot
+                    'original_timeslot': resident_start_time,
+                    'original_end_time': resident_end_time.split(' - ')[-1] if ' - ' in resident_end_time else resident_end_time,
+                    'original_status': 'rejected',
+                    'facility_name': facility_name,
+                    'overlap_reason': 'Official booking for entire day'
                 })
             
             if rejected_resident_bookings:
@@ -718,6 +1026,10 @@ Barangay Management"""
         booking_status = 'approved' if is_official_booking else data.get('status', 'pending')
         print(f"🔍 DEBUG: Setting booking status to: {booking_status}")
         
+        # Get current timestamp for debugging
+        current_timestamp = datetime.now()
+        print(f"🔍 DEBUG: Server timestamp at booking creation: {current_timestamp}")
+        
         cursor.execute('''
             INSERT INTO bookings (facility_id, user_id, booking_date, start_time, end_time, status, purpose, total_amount, contact_number, contact_address, booking_reference, time_slot_id, duration_hours, base_rate, downpayment_amount, receipt_base64)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -743,6 +1055,64 @@ Barangay Management"""
         booking_id = cursor.lastrowid
         conn.commit()
         
+        # Fetch the created booking to check the timestamp
+        cursor.execute('SELECT created_at FROM bookings WHERE id = ?', (booking_id,))
+        stored_timestamp = cursor.fetchone()
+        if stored_timestamp:
+            print(f"🔍 DEBUG: Stored timestamp in database: {stored_timestamp[0]}")
+        else:
+            print(f"🔍 DEBUG: No timestamp found for booking ID: {booking_id}")
+        
+        # Send email notification to officials about new booking request (only for residents)
+        if not is_official_booking:
+            try:
+                # Get user details for email
+                cursor.execute('SELECT full_name, email, contact_number FROM users WHERE id = ?', (user_id,))
+                user_details = cursor.fetchone()
+                
+                if user_details:
+                    resident_name = user_details[0] if user_details[0] else 'Unknown Resident'
+                    resident_email = user_details[1] if user_details[1] else 'unknown@email.com'
+                    resident_contact = user_details[2] if len(user_details) > 2 and user_details[2] else 'Not provided'
+                    
+                    # Get facility name
+                    cursor.execute('SELECT name FROM facilities WHERE id = ?', (data['facility_id'],))
+                    facility_result = cursor.fetchone()
+                    facility_name = facility_result[0] if facility_result else 'Unknown Facility'
+                    
+                    # Prepare resident details for email
+                    resident_details = {
+                        'full_name': resident_name,
+                        'email': resident_email,
+                        'contact_number': resident_contact,
+                        'verification_status': 'Pending Booking Approval'
+                    }
+                    
+                    # Prepare booking details for email
+                    booking_details_for_email = {
+                        'facility_name': facility_name,
+                        'booking_date': data['date'],
+                        'start_time': data['timeslot'],
+                        'end_time': data['timeslot'],
+                        'purpose': data.get('purpose', 'Not specified'),
+                        'submitted_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'booking_reference': f'BR{datetime.now().strftime("%Y%m%d%H%M%S")}{user_id}',
+                        'status': 'pending'
+                    }
+                    
+                    # Send notification email to officials
+                    notification_sent = email_service.send_official_notification_email(
+                        request_type="booking",
+                        resident_details=resident_details,
+                        request_details=booking_details_for_email
+                    )
+                    
+                    print(f"📧 Booking notification email sent to officials: {notification_sent}")
+                    
+            except Exception as email_error:
+                print(f"❌ Error sending booking notification email to officials: {email_error}")
+                # Don't fail the booking creation if email fails
+        
         # Debug: Check if receipt was saved
         if data.get('receipt_base64'):
             print(f"✅ RECEIPT SAVED: receipt_base64 length = {len(str(data['receipt_base64']))} for booking {booking_id}")
@@ -755,13 +1125,45 @@ Barangay Management"""
         if is_official_booking and rejected_resident_bookings:
             response_message += f' Auto-rejected {len(rejected_resident_bookings)} resident booking(s).'
         
+        # Add auto-refresh metadata for frontend
+        refresh_data = {
+            'trigger': 'booking_created',
+            'booking_id': booking_id,
+            'facility_id': data['facility_id'],
+            'booking_date': data['date'],
+            'timeslot': data['timeslot'],
+            'user_email': data['user_email'],
+            'status': booking_status,
+            'timestamp': datetime.now().isoformat(),
+            'requires_refresh': [
+                'calendar_view',      # Refresh facility calendar
+                'bookings_list',      # Refresh user bookings
+                'booking_form',       # Refresh booking forms for this facility/date
+                'time_slots',         # Refresh available time slots
+                'conflict_check'      # Trigger conflict checking for other users
+            ],
+            'conflict_notification': {
+                'facility_id': data['facility_id'],
+                'date': data['date'],
+                'timeslot': data['timeslot'],
+                'message': 'Time slot is no longer available',
+                'exclude_user': data['user_email']  # Don't notify the user who just booked
+            }
+        }
+        
+        # If official booking rejected resident bookings, add those to refresh data
+        if rejected_resident_bookings:
+            refresh_data['rejected_bookings'] = rejected_resident_bookings
+            refresh_data['requires_refresh'].append('resident_notifications')
+        
         return jsonify({
             'success': True, 
             'message': response_message,
             'booking_id': booking_id,
             'status': booking_status,
             'rejected_resident_bookings': rejected_resident_bookings,
-            'note': 'Multiple users may book the same time slot. First approved booking wins!' if not is_official_booking else 'Official bookings take priority over resident bookings.'
+            'note': 'Multiple users may book the same time slot. First approved booking wins!' if not is_official_booking else 'Official bookings take priority over resident bookings.',
+            'refresh_data': refresh_data  # Auto-refresh instructions
         })
         
     except Exception as e:
@@ -1037,10 +1439,10 @@ def register():
         print(f"🔍 DEBUG: Address: '{data.get('address')}'")
         
         cursor.execute('''
-            INSERT INTO users (email, password, full_name, role, contact_number, address)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO users (email, password, full_name, role, contact_number, address, email_verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (data['email'], password_hash, data['name'], data['role'], 
-              data.get('contact_number'), data.get('address')))
+              data.get('contact_number'), data.get('address'), False))
         
         print("🔍 DEBUG: Database insertion completed")
         
@@ -1054,27 +1456,29 @@ def register():
         conn.commit()
         conn.close()
         
-        # Generate session token for automatic login after registration
-        import uuid
-        session_token = str(uuid.uuid4())
+        # Generate OTP for email verification
+        otp_code = generate_otp()
+        expires_at = datetime.now() + timedelta(minutes=10)
+        
+        # Store OTP in database
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO email_otps (email, otp_code, expires_at)
+            VALUES (?, ?, ?)
+        ''', (data['email'], otp_code, expires_at.isoformat()))
+        conn.commit()
+        conn.close()
+        
+        # Send OTP email
+        email_sent = send_otp_email(data['email'], otp_code)
         
         return jsonify({
             'success': True, 
-            'message': 'User registered successfully',
-            'token': session_token,  # CRITICAL: Add token for automatic login
-            'user': {
-                'id': user[0],
-                'email': user[1],
-                'full_name': user[3],
-                'role': user[4],
-                'verified': bool(user[5]),
-                'verification_type': user[6] if len(user) > 6 else None,  # Include verification_type
-                'discount_rate': user[7] if len(user) > 7 else 0,  # Include discount_rate
-                'contact_number': user[8] if len(user) > 8 else None,
-                'address': user[9] if len(user) > 9 else None,
-                'created_at': user[15] if len(user) > 15 else user[9],  # Fixed index for created_at
-                'is_authenticated': True  # CRITICAL: Mark as authenticated
-            }
+            'message': 'User registered successfully. Please check your email for verification code.',
+            'requires_email_verification': True,
+            'email': data['email'],
+            'email_sent': email_sent
         })
     except Exception as e:
         print(f"❌ Registration error: {e}")
@@ -1089,6 +1493,129 @@ def register():
             'success': False,
             'message': 'Email already exists'
         }), 400
+
+@app.route('/api/auth/verify-email-otp', methods=['POST'])
+def verify_email_otp():
+    data = request.json
+    
+    if not data.get('email') or not data.get('otp_code'):
+        return jsonify({
+            'success': False,
+            'message': 'Email and OTP code are required'
+        }), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # Find valid OTP for this email
+        cursor.execute('''
+            SELECT otp_code, expires_at, is_used FROM email_otps 
+            WHERE email = ? AND otp_code = ? AND is_used = FALSE
+            ORDER BY created_at DESC LIMIT 1
+        ''', (data['email'], data['otp_code']))
+        
+        otp_record = cursor.fetchone()
+        
+        if not otp_record:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'Invalid or expired OTP code'
+            }), 400
+        
+        # Check if OTP is expired
+        expires_at = datetime.fromisoformat(otp_record[1])
+        if datetime.now() > expires_at:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'OTP code has expired'
+            }), 400
+        
+        # Mark OTP as used
+        cursor.execute('''
+            UPDATE email_otps SET is_used = TRUE 
+            WHERE email = ? AND otp_code = ?
+        ''', (data['email'], data['otp_code']))
+        
+        # Update user email_verified status
+        cursor.execute('''
+            UPDATE users SET email_verified = TRUE 
+            WHERE email = ?
+        ''', (data['email'],))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Email verified successfully. You can now log in.',
+            'redirect_to_login': True
+        })
+        
+    except Exception as e:
+        print(f"❌ OTP verification error: {e}")
+        conn.close()
+        return jsonify({
+            'success': False,
+            'message': f'Verification failed: {str(e)}'
+        }), 500
+
+@app.route('/api/auth/resend-otp', methods=['POST'])
+def resend_otp():
+    data = request.json
+    
+    if not data.get('email'):
+        return jsonify({
+            'success': False,
+            'message': 'Email is required'
+        }), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # Check if user exists
+        cursor.execute('SELECT id FROM users WHERE email = ?', (data['email'],))
+        user = cursor.fetchone()
+        
+        if not user:
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+        
+        # Generate new OTP
+        otp_code = generate_otp()
+        expires_at = datetime.now() + timedelta(minutes=10)
+        
+        # Store new OTP
+        cursor.execute('''
+            INSERT INTO email_otps (email, otp_code, expires_at)
+            VALUES (?, ?, ?)
+        ''', (data['email'], otp_code, expires_at.isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        # Send OTP email
+        email_sent = send_otp_email(data['email'], otp_code)
+        
+        return jsonify({
+            'success': True,
+            'message': 'New OTP code sent to your email',
+            'email_sent': email_sent
+        })
+        
+    except Exception as e:
+        print(f"❌ Resend OTP error: {e}")
+        conn.close()
+        return jsonify({
+            'success': False,
+            'message': f'Failed to resend OTP: {str(e)}'
+        }), 500
 
 # Add sample data
 @app.route('/api/setup-sample-data', methods=['POST'])
@@ -1393,6 +1920,13 @@ def get_user_by_id(user_id):
 def update_user_profile():
     try:
         data = request.get_json()
+        print(f"🔍 DEBUG: Profile update request data: {data}")
+        
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        if 'email' not in data:
+            return jsonify({'success': False, 'message': 'Email is required'}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1413,8 +1947,11 @@ def update_user_profile():
             update_fields.append('address = ?')
             update_values.append(data['address'])
         
+        # Always add updated_at timestamp
+        update_fields.append('updated_at = CURRENT_TIMESTAMP')
+        
         if update_fields:
-            update_fields.append('updated_at = CURRENT_TIMESTAMP')
+            # Add email as the last parameter for WHERE clause
             update_values.append(data['email'])
             
             cursor.execute(f'''
@@ -1426,23 +1963,64 @@ def update_user_profile():
             print(f"✅ Updated profile for user: {data['email']}")
             print(f"🔍 Updated fields: {', '.join([field.split(' = ')[0] for field in update_fields[:-1]])}")
         else:
-            print(f"🔍 No fields to update for user: {data['email']}")
+            print(f"🔍 No basic fields to update for user: {data['email']}")
         
         # Update profile photo if provided
         if 'profile_photo_url' in data and data['profile_photo_url']:
+            print(f"🔍 Updating profile photo for user: {data['email']}")
             cursor.execute('''
                 UPDATE users 
                 SET profile_photo_url = ?
                 WHERE email = ?
             ''', (data['profile_photo_url'], data['email']))
             print(f"✅ Updated profile photo for user: {data['email']}")
+        else:
+            print(f"🔍 No profile photo provided for user: {data['email']}")
         
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        # Add auto-refresh metadata for frontend
+        refresh_data = {
+            'trigger': 'profile_updated',
+            'user_email': data['email'],
+            'timestamp': datetime.now().isoformat(),
+            'updated_fields': [],  # Track which fields were updated
+            'requires_refresh': [
+                'user_profile',            # Refresh user profile data
+                'profile_photo',           # Refresh profile photo display
+                'account_settings',        # Refresh account settings
+                'resident_dashboard',      # Refresh resident dashboard
+                'official_profile'         # Refresh official profile
+            ]
+        }
+        
+        # Track which fields were updated for targeted refresh
+        if 'full_name' in data and data['full_name'] is not None:
+            refresh_data['updated_fields'].append('full_name')
+        if 'contact_number' in data and data['contact_number'] is not None:
+            refresh_data['updated_fields'].append('contact_number')
+        if 'address' in data and data['address'] is not None:
+            refresh_data['updated_fields'].append('address')
+        if 'profile_photo_url' in data and data['profile_photo_url']:
+            refresh_data['updated_fields'].append('profile_photo_url')
+            refresh_data['requires_refresh'].append('profile_photo_display')
+        
+        print(f"✅ Updated profile for user: {data['email']}")
+        print(f"🔍 Updated fields: {', '.join(refresh_data['updated_fields'])}")
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Profile updated successfully',
+            'refresh_data': refresh_data  # Auto-refresh instructions
+        })
+    except KeyError as e:
+        print(f"❌ KeyError in profile update: {e}")
+        return jsonify({'success': False, 'message': f'Missing required field: {str(e)}'}), 400
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"❌ Exception in profile update: {e}")
+        print(f"❌ Exception type: {type(e).__name__}")
+        return jsonify({'success': False, 'message': f'Error updating profile: {str(e)}'}), 500
 
 @app.route('/api/users/profile/<email>', methods=['GET'])
 def get_user_profile(email):
@@ -1450,11 +2028,8 @@ def get_user_profile(email):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
-            SELECT id, email, full_name, role, verified, verification_type, discount_rate, contact_number, address, profile_photo_url, created_at, fake_booking_violations, is_banned, banned_at, ban_reason
-            FROM users 
-            WHERE email = ?
-        ''', (email,))
+        # Use the same query as Gmail auth for consistency
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
         
         user = cursor.fetchone()
         conn.close()
@@ -1465,19 +2040,23 @@ def get_user_profile(email):
                 'user': {
                     'id': user[0],
                     'email': user[1],
-                    'full_name': user[2],
-                    'role': user[3],
-                    'verified': user[4],
-                    'verification_type': user[5],
-                    'discount_rate': user[6],
-                    'contact_number': user[7],
-                    'address': user[8],
-                    'profile_photo_url': user[9],
-                    'created_at': user[10],
-                    'fake_booking_violations': user[11] if len(user) > 11 else 0,
-                    'is_banned': user[12] if len(user) > 12 else False,
-                    'banned_at': user[13] if len(user) > 13 else None,
-                    'ban_reason': user[14] if len(user) > 14 else None
+                    'full_name': user[3],  # Fixed: full_name is at index 3
+                    'role': user[4],        # Fixed: role is at index 4
+                    'verified': bool(user[5]),  # Fixed: verified is at index 5, convert to bool
+                    'verification_type': user[6],  # Fixed: verification_type is at index 6
+                    'discount_rate': user[7],    # Fixed: discount_rate is at index 7
+                    'contact_number': user[8],    # Fixed: contact_number is at index 8
+                    'address': user[9],          # Fixed: address is at index 9
+                    'profile_photo_url': user[10],  # Fixed: profile_photo_url is at index 10
+                    'is_active': bool(user[12]),  # Fixed: is_active is at index 12
+                    'email_verified': bool(user[13]),  # Fixed: email_verified is at index 13
+                    'last_login': user[14],       # Fixed: last_login is at index 14
+                    'created_at': user[15],       # Fixed: created_at is at index 15
+                    'updated_at': user[16],       # Fixed: updated_at is at index 16
+                    'fake_booking_violations': user[18] if len(user) > 18 else 0,  # Fixed: index 18
+                    'is_banned': bool(user[19]) if len(user) > 19 else False,      # Fixed: index 19
+                    'banned_at': user[20] if len(user) > 20 else None,              # Fixed: index 20
+                    'ban_reason': user[21] if len(user) > 21 else None             # Fixed: index 21
                 }
             })
         else:
@@ -1642,7 +2221,12 @@ def get_verification_status(user_id):
         lock_message = ""
         current_status = "none"
         
-        if user['verified'] == 1 and user['verification_type'] == 'resident':  # Verified resident
+        # FIRST PRIORITY: Check if user has pending request - LOCKS EVERYONE
+        if has_pending:
+            can_submit = False  
+            lock_message = "You already submitted a Verification Request! wait for officials to either Reject or Approve your request"
+            current_status = "pending_request"
+        elif user['verified'] == 1 and user['verification_type'] == 'resident':  # Verified resident
             can_submit = False
             lock_message = "You are already verified as a Resident with full benefits"
             current_status = "verified_resident"
@@ -1650,10 +2234,6 @@ def get_verification_status(user_id):
             can_submit = True  # ALLOWED: Can submit to upgrade to resident status
             lock_message = "You can submit a verification request to upgrade to Resident status"
             current_status = "verified_non_resident"
-        elif has_pending:
-            can_submit = False  
-            lock_message = "You already submitted a Verification Request! wait for officials to either Reject or Approve your request"
-            current_status = "pending_request"
         else:  # Unverified resident (verified: 0 or 2)
             can_submit = True
             if user['verified'] == 2:
@@ -1840,6 +2420,40 @@ def verification_requests():
             conn.commit()
             conn.close()
             
+            # Send email notification to officials about the authentication request
+            try:
+                # Prepare resident details for email
+                resident_details = {
+                    'full_name': data.get('fullName', ''),
+                    'email': user_email,
+                    'contact_number': data.get('contactNumber', ''),
+                    'verification_status': 'Pending Verification'
+                }
+                
+                # Prepare request details for email
+                request_details = {
+                    'submitted_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'reference_number': f"VR-{data.get('residentId')}-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                    'verification_type': data.get('verificationType', ''),
+                    'discount_rate': '10%' if data.get('verificationType') == 'resident' else '5%',
+                    'address': data.get('address', '')
+                }
+                
+                # Send notification email to officials
+                notification_sent = email_service.send_official_notification_email(
+                    request_type="authentication",
+                    resident_details=resident_details,
+                    request_details=request_details
+                )
+                
+                if notification_sent:
+                    print(f"📧 Authentication request notification sent to officials")
+                else:
+                    print(f"❌ Failed to send authentication request notification")
+                    
+            except Exception as email_error:
+                print(f"❌ Error sending authentication request notification: {email_error}")
+            
             print("✅ Verification request created successfully")
             return jsonify({'success': True, 'message': 'Verification request submitted successfully'})
             
@@ -1896,8 +2510,27 @@ def update_verification_request(request_id):
             if data.get('status') == 'approved':
                 # For residents: verified = 1, For non-residents: verified = 2
                 is_verified = 1 if verification_type == 'resident' else 2
+            elif data.get('status') == 'rejected':
+                # 🎯 CRITICAL FIX: Preserve Non-Resident status when upgrade request is rejected
+                # Get current user verification status before making changes
+                cursor.execute('''
+                    SELECT verified FROM users 
+                    WHERE id = (SELECT user_id FROM verification_requests WHERE id = ?)
+                ''', (request_id,))
+                current_verified = cursor.fetchone()[0]
+                
+                # If user is currently verified as Non-Resident (verified = 2), keep that status
+                # Only set to unverified (0) if they were truly unverified
+                if current_verified == 2:  # Non-Resident
+                    is_verified = 2  # Keep Non-Resident status
+                    discount_rate = 0.05  # Keep Non-Resident discount
+                    print(f"🎯 Preserving Non-Resident status for user after rejection")
+                else:
+                    is_verified = 0  # Only unverified users become unverified
+                    discount_rate = 0.0
+                    print(f"🔄 Setting user to unverified after rejection")
             else:
-                is_verified = 0  # rejected
+                is_verified = 0  # rejected (fallback)
                 discount_rate = 0.0
             
             # Update user verification and discount
@@ -1916,15 +2549,304 @@ def update_verification_request(request_id):
                     WHERE id = (SELECT user_id FROM verification_requests WHERE id = ?)
                 ''', (profile_photo, request_id))
                 print(f"✅ Updated profile photo for user with verification request ID: {request_id}")
+            
+            # 📧 Send email notifications for verification status updates
+            try:
+                # Get user details for email
+                cursor.execute('''
+                    SELECT u.email, u.full_name
+                    FROM users u
+                    WHERE u.id = (SELECT user_id FROM verification_requests WHERE id = ?)
+                ''', (request_id,))
+                
+                user_details = cursor.fetchone()
+                if user_details:
+                    user_email, user_name = user_details
+                    
+                    if data.get('status') == 'approved':
+                        # Send approval email
+                        email_service.send_verification_approval_email(
+                            recipient_email=user_email,
+                            recipient_name=user_name,
+                            verification_type=verification_type,
+                            discount_rate=discount_rate
+                        )
+                        print(f"📧 Verification approval email sent to {user_email}")
+                        
+                    elif data.get('status') == 'rejected':
+                        # Send rejection email
+                        rejection_reason = data.get('rejectionReason', 'Verification request did not meet requirements')
+                        email_service.send_verification_rejection_email(
+                            recipient_email=user_email,
+                            recipient_name=user_name,
+                            verification_type=verification_type,
+                            rejection_reason=rejection_reason
+                        )
+                        print(f"📧 Verification rejection email sent to {user_email}")
+                        
+            except Exception as email_error:
+                print(f"❌ Error sending verification email notification: {email_error}")
+                # Don't fail the verification update if email fails
         
         conn.commit()
         conn.close()
         
         print(f"✅ Verification request {request_id} updated successfully")
-        return jsonify({'success': True, 'message': 'Verification request updated successfully'})
+        
+        # Add auto-refresh metadata for frontend
+        refresh_data = {
+            'trigger': 'verification_status_updated',
+            'request_id': request_id,
+            'status': data.get('status'),
+            'timestamp': datetime.now().isoformat(),
+            'requires_refresh': [
+                'verification_requests',    # Refresh verification requests list
+                'user_profile',            # Refresh user profile data
+                'verification_status',      # Refresh verification status
+                'account_settings'         # Refresh account settings
+            ]
+        }
+        
+        # If approved, add additional refresh requirements
+        if data.get('status') == 'approved':
+            refresh_data['requires_refresh'].addAll([
+                'user_discount_rate',      # Refresh discount rates
+                'profile_photo',           # Refresh profile photos
+                'resident_dashboard'       # Refresh dashboard
+            ])
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Verification request updated successfully',
+            'refresh_data': refresh_data  # Auto-refresh instructions
+        })
         
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/auth/google-login', methods=['POST'])
+def google_login():
+    try:
+        data = request.get_json()
+        id_token = data.get('idToken')
+        email = data.get('email')
+        
+        if not id_token or not email:
+            return jsonify({
+                'success': False,
+                'message': 'Missing idToken or email'
+            }), 400
+        
+        # Verify Google ID token
+        google_response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={id_token}'
+        )
+        
+        if google_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid Google token'
+            }), 401
+        
+        token_data = google_response.json()
+        
+        # Verify the email matches
+        if token_data.get('email') != email:
+            return jsonify({
+                'success': False,
+                'message': 'Email mismatch'
+            }), 401
+        
+        # Check if user exists in database
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+        
+        if user:
+            # Existing user - return user data with correct column mapping
+            user_data = {
+                'id': user[0],
+                'email': user[1],
+                'full_name': user[3],  # full_name is at index 3
+                'role': user[4],        # role is at index 4
+                'verified': bool(user[5]),  # verified is at index 5
+                'verification_type': user[6],  # verification_type is at index 6
+                'discount_rate': user[7],    # discount_rate is at index 7
+                'contact_number': user[8],    # contact_number is at index 8
+                'address': user[9],          # address is at index 9
+                'created_at': user[15]       # created_at is at index 15
+            }
+            
+            # Check if user has complete profile (configured vs unconfigured)
+            has_complete_profile = (
+                user_data['contact_number'] and 
+                user_data['contact_number'].strip() != '' and
+                user_data['address'] and 
+                user_data['address'].strip() != ''
+            )
+            
+            # Generate JWT token for session
+            token_payload = {
+                'user_id': user[0],
+                'email': email,
+                'exp': datetime.now(timezone.utc) + timedelta(days=7)
+            }
+            
+            jwt_token = jwt.encode(token_payload, 'barangay-reserve-secret-key-32-chars-long', algorithm='HS256')
+            
+            conn.close()
+            
+            return jsonify({
+                'success': True,
+                'user': user_data,
+                'token': jwt_token,
+                'message': 'Login successful',
+                'is_existing_user': True,
+                'has_complete_profile': has_complete_profile  # New flag for profile completeness
+            })
+        else:
+            # User doesn't exist - return error for login attempt
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'Email not registered. Please register first.',
+                'is_existing_user': False
+            }), 404
+            
+    except Exception as e:
+        print(f"❌ Google login error: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Server error: {str(e)}'
+        }), 500
+
+@app.route('/api/auth/google-register', methods=['POST'])
+def google_register():
+    try:
+        data = request.get_json()
+        id_token = data.get('idToken')
+        email = data.get('email')
+        
+        if not id_token or not email:
+            return jsonify({
+                'success': False,
+                'message': 'Missing idToken or email'
+            }), 400
+        
+        # Verify Google ID token
+        google_response = requests.get(
+            f'https://oauth2.googleapis.com/tokeninfo?id_token={id_token}'
+        )
+        
+        if google_response.status_code != 200:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid Google token or email may not be correctly spelled'
+            }), 401
+        
+        token_data = google_response.json()
+        
+        # Verify the email matches
+        if token_data.get('email') != email:
+            return jsonify({
+                'success': False,
+                'message': 'Email mismatch'
+            }), 401
+        
+        # Check if user already exists in database
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+        
+        if user:
+            # User already exists - cannot register
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': 'Account already exists. Please login instead.',
+                'is_existing_user': True
+            }), 409  # Conflict status
+        
+        # New user - create account as UNVERIFIED resident
+        cursor.execute('''
+            INSERT INTO users (email, password, full_name, role, verified, verification_type, discount_rate, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            email,
+            'gmail-auth-no-password',  # placeholder password
+            token_data.get('name', ''),
+            'resident',
+            False,  # Gmail auth = NOT automatically verified - must go through verification process
+            'unverified',  # New Gmail users start as unverified
+            0.0,  # No discount until verified
+            datetime.utcnow()
+        ))
+        
+        user_id = cursor.lastrowid
+        
+        # Get the created user
+        cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+        new_user = cursor.fetchone()
+        
+        user_data = {
+            'id': new_user[0],
+            'email': new_user[1],
+            'full_name': new_user[3],  # full_name is at index 3
+            'role': new_user[4],        # role is at index 4
+            'verified': bool(new_user[5]),  # verified is at index 5
+            'verification_type': new_user[6],  # verification_type is at index 6
+            'discount_rate': new_user[7],    # discount_rate is at index 7
+            'contact_number': new_user[8],    # contact_number is at index 8
+            'address': new_user[9],          # address is at index 9
+            'created_at': new_user[15]       # created_at is at index 15
+        }
+        
+        # Generate JWT token for session
+        token_payload = {
+            'user_id': user_id,
+            'email': email,
+            'exp': datetime.now(timezone.utc) + timedelta(days=7)
+        }
+        
+        jwt_token = jwt.encode(token_payload, 'barangay-reserve-secret-key-32-chars-long', algorithm='HS256')
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'user': user_data,
+            'token': jwt_token,
+            'message': 'Registration successful',
+            'is_existing_user': False
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/')
+def serve_homepage():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/index.html')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/privacy.html')
+def serve_privacy():
+    return send_from_directory('.', 'privacy.html')
+
+@app.route('/google86d0cfd16d914651.html')
+def serve_google_verification():
+    return send_from_directory('.', 'google86d0cfd16d914651.html')
+
+@app.route('/terms.html')
+def serve_terms():
+    return send_from_directory('.', 'terms.html')
 
 if __name__ == '__main__':
     print("🚀 Starting Barangay Reserve Server...")
@@ -1942,6 +2864,7 @@ if __name__ == '__main__':
     print("   PUT    /api/verification-requests/<id>")
     print("   POST   /api/login")
     print("   POST   /api/register")
+    print("   POST   /api/auth/google-login")
     print("   PUT    /api/users/profile")
     print("   GET    /api/users/profile/<email>")
     print("   POST   /api/setup-sample-data")

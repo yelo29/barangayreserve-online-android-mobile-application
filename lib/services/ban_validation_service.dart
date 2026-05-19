@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import 'api_service.dart';
+import 'auth_api_service.dart';
 
 /// Service for validating user ban status before performing actions
 class BanValidationService {
@@ -10,12 +11,16 @@ class BanValidationService {
   /// Check if user can perform booking action
   static Future<Map<String, dynamic>> validateUserForBooking() async {
     try {
-      final userData = await ApiService.getCurrentUser();
-      if (userData == null) {
+      // Get user email directly from AuthApiService to avoid circular dependency
+      final authApiService = AuthApiService.instance;
+      await authApiService.ensureUserLoaded();
+      final currentUser = authApiService.currentUser;
+      
+      if (currentUser == null) {
         return {'allowed': false, 'reason': 'User not logged in'};
       }
       
-      final userEmail = userData['email'];
+      final userEmail = currentUser['email'];
       print('🔍 BanValidation: Checking booking permission for user: $userEmail');
       
       // Check server-side ban status
@@ -52,12 +57,16 @@ class BanValidationService {
   /// Check if user can submit verification request
   static Future<Map<String, dynamic>> validateUserForVerification() async {
     try {
-      final userData = await ApiService.getCurrentUser();
-      if (userData == null) {
+      // Get user email directly from AuthApiService to avoid circular dependency
+      final authApiService = AuthApiService.instance;
+      await authApiService.ensureUserLoaded();
+      final currentUser = authApiService.currentUser;
+      
+      if (currentUser == null) {
         return {'allowed': false, 'reason': 'User not logged in'};
       }
       
-      final userEmail = userData['email'];
+      final userEmail = currentUser['email'];
       print('🔍 BanValidation: Checking verification permission for user: $userEmail');
       
       // Check server-side ban status

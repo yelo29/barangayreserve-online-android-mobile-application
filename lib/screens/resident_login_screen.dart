@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../services/auth_api_service.dart';
 import '../services/data_service.dart';
+import '../services/google_auth_service.dart';
+import '../services/persistent_auth_service.dart';
 import '../dashboard/resident_dashboard.dart';
 import '../screens/selection_screen.dart';
+import '../screens/email_verification_screen.dart';
+import '../screens/profile_configuration_screen.dart';
 
 class ResidentLoginScreen extends StatefulWidget {
   const ResidentLoginScreen({super.key});
@@ -14,140 +18,104 @@ class ResidentLoginScreen extends StatefulWidget {
 }
 
 class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-
   bool _isLoading = false;
-  bool _isSignUp = false;
   String? _errorMessage;
-  Map<String, dynamic>? _currentUser;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _nameController.dispose();
-    _contactController.dispose();
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _signUp() async {
-    if (_emailController.text.isEmpty || 
-        _passwordController.text.isEmpty || 
-        _nameController.text.isEmpty ||
-        _contactController.text.isEmpty ||
-        _addressController.text.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Please fill in all fields';
-        });
-      }
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Password must be at least 6 characters';
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
+  Future<void> _registerWithGmail() async {
+    try {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
-    }
 
-    try {
-      print('🔥 Starting server sign up process...');
-      print('Email: ${_emailController.text.trim()}');
-      print('Name: ${_nameController.text.trim()}');
-      print('Contact: ${_contactController.text.trim()}');
-      print('Address: ${_addressController.text.trim()}');
+      // Use Gmail authentication with REGISTER endpoint
+      final result = await GoogleAuthService.signInWithGoogle('/api/auth/google-register');
       
-      final result = await ApiService.register(
-        _nameController.text.trim(),
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        role: 'resident',
-      );
-      
-      // Update profile with contact and address after successful registration
-      if (result['success']) {
-        try {
-          final authApiService = AuthApiService.instance;
-          await authApiService.signInWithEmailAndPassword(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
+      if (result['success'] == true) {
+        final userData = result['user'];
+        final token = result['token'];
+        
+        // New user - save login state and navigate to Resident Access screen
+        await PersistentAuthService.saveLoginState(userData, token);
+        
+        if (mounted) {
+          // Show success message and redirect to Resident Access screen
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful! Please login to continue.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
           );
-          
-          // Update profile with additional info
-          await DataService.updateUserProfile({
-            'contact_number': _contactController.text.trim(),
-            'address': _addressController.text.trim(),
-          });
-        } catch (e) {
-          print('❌ Error updating profile after registration: $e');
-        }
-      }
-      
-      if (result['success']) {
-        print('✅ Server Registration successful!');
-        
-        // AUTO-LOGIN AFTER REGISTRATION
-        print('🔥 Auto-logging in after registration...');
-        final loginResult = await AuthApiService.instance.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-        
-        if (loginResult['success'] && mounted) {
-          print('✅ Auto-login successful!');
-          Navigator.pushReplacement(
+
+          // Navigate back to Resident Access screen
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => ResidentDashboard(onLogout: (context) async {
-              print('🔥 Resident logout - clearing authentication data');
-              
-              // Clear authentication data
-              await AuthApiService.instance.signOut();
-              await ApiService.clearUserData();
-              
-              // Navigate back to selection screen
-              if (context.mounted) {
-                Navigator.pushReplacement(
-                  context, 
-                  MaterialPageRoute(builder: (_) => const SelectionScreen())
-                );
-              }
-            })),
+            MaterialPageRoute(
+              builder: (context) => const ResidentLoginScreen(),
+            ),
+            (route) => false,
           );
-        } else {
-          print('❌ Auto-login failed: ${loginResult['message']}');
-          if (mounted) {
-            setState(() {
-              _errorMessage = 'Registration successful but login failed. Please try logging in manually.';
-            });
-          }
         }
       } else {
         if (mounted) {
-          setState(() {
-            _errorMessage = result['message'] ?? 'Registration failed';
-          });
+          // Check if this is a ban error
+          if (result['error_type'] == 'user_banned') {
+            // Show ban dialog for banned users
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red, size: 28),
+                      SizedBox(width: 10),
+                      Text('Account Banned', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result['message'] ?? 'Your account has been banned.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      if (result['ban_reason'] != null) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          'Reason: ${result['ban_reason']}',
+                          style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                      SizedBox(height: 15),
+                      Text(
+                        'Please contact the barangay office if you believe this is an error.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('OK', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            // Regular error handling
+            setState(() {
+              _errorMessage = result['message'] ?? 'Gmail registration failed';
+            });
+          }
         }
       }
     } catch (e) {
-      print('❌ Server Registration error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Registration failed: ${e.toString()}';
+          _errorMessage = 'Gmail registration error: ${e.toString()}';
         });
       }
     } finally {
@@ -159,82 +127,111 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
     }
   }
 
-  Future<void> _signIn() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Please fill in all fields';
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
+  Future<void> _signInWithGmail() async {
+    try {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
-    }
 
-    try {
-      print('🔥 Starting server sign in process...');
-      print('Email: ${_emailController.text.trim()}');
+      // Use Gmail authentication with LOGIN endpoint
+      final result = await GoogleAuthService.signInWithGoogle('/api/auth/google-login');
       
-      final result = await AuthApiService.instance.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
-      
-      if (result['success']) {
-        print('✅ Server Login successful!');
-        print('User role: ${result['user']['role']}');
+      if (result['success'] == true) {
+        final userData = result['user'];
+        final token = result['token'];
+        final hasCompleteProfile = result['has_complete_profile'] ?? false;
         
-        if (result['user']['role'] == 'resident') {
-          if (mounted) {
-            setState(() {
-              _currentUser = result['user'];
-            });
-          }
+        if (hasCompleteProfile) {
+          // User has complete profile - login directly
+          await PersistentAuthService.saveLoginState(userData, token);
           
           if (mounted) {
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => ResidentDashboard(onLogout: (context) async {
-                print('🔥 Resident logout - clearing authentication data');
-                
-                // Clear authentication data
-                await AuthApiService.instance.signOut();
-                await ApiService.clearUserData();
-                
-                // Navigate back to selection screen
-                if (context.mounted) {
-                  Navigator.pushReplacement(
-                    context, 
-                    MaterialPageRoute(builder: (_) => const SelectionScreen())
-                  );
-                }
-              }, userData: result['user'])),
+              MaterialPageRoute(
+                builder: (context) => ResidentDashboard(
+                  onLogout: (context) => _logout(context),
+                  userData: userData,
+                ),
+              ),
+              (route) => false,
             );
           }
         } else {
+          // User has incomplete profile - redirect to profile configuration
           if (mounted) {
-            setState(() {
-              _errorMessage = 'This account is not a resident account';
-            });
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfileConfigurationScreen(
+                  userData: userData,
+                  token: token,
+                ),
+              ),
+              (route) => false,
+            );
           }
         }
       } else {
         if (mounted) {
-          setState(() {
-            _errorMessage = result['message'] ?? 'Login failed';
-          });
+          // Check if this is a ban error
+          if (result['error_type'] == 'user_banned') {
+            // Show ban dialog for banned users
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red, size: 28),
+                      SizedBox(width: 10),
+                      Text('Account Banned', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result['message'] ?? 'Your account has been banned.',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      if (result['ban_reason'] != null) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          'Reason: ${result['ban_reason']}',
+                          style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                      SizedBox(height: 15),
+                      Text(
+                        'Please contact the barangay office if you believe this is an error.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('OK', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                );
+              },
+            );
+          } else {
+            // Regular error handling
+            setState(() {
+              _errorMessage = result['message'] ?? 'Gmail login failed';
+            });
+          }
         }
       }
     } catch (e) {
-      print('❌ Login error: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'An error occurred during login';
+          _errorMessage = 'Gmail login error: ${e.toString()}';
         });
       }
     } finally {
@@ -244,6 +241,33 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
         });
       }
     }
+  }
+
+  void _logout(BuildContext context) async {
+    try {
+      print('🔥 ResidentLoginScreen logout - clearing authentication data');
+      
+      // Sign out from Google to force account selection next time
+      await GoogleAuthService.signOut();
+      
+      // Clear authentication data
+      await AuthApiService.instance.signOut();
+      await ApiService.clearUserData();
+      
+      // Navigate back to selection screen
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => const SelectionScreen())
+        );
+      }
+    } catch (e) {
+      print('❌ Logout error: $e');
+    }
+  }
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -271,7 +295,7 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
                             icon: const Icon(Icons.arrow_back),
                             onPressed: () => Navigator.pop(context),
                           ),
-                          Text(_isSignUp ? "Resident Sign Up" : "Resident Login",
+                          const Text("Resident Log-in/Sign-up",
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
@@ -288,76 +312,98 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
                         ),
                         child: Column(
                           children: [
-                            if (_isSignUp) ...[
-                              _buildTextField("Full Name", "Enter your full name", controller: _nameController, isName: true),
-                              const SizedBox(height: 16),
-                              _buildTextField("Contact Number", "Enter your contact number", controller: _contactController, isPhone: true),
-                              const SizedBox(height: 16),
-                              _buildTextField("Address", "Enter your address", controller: _addressController),
-                              const SizedBox(height: 16),
-                            ],
-                            _buildTextField("Email Address", "Enter your email", controller: _emailController, isEmail: true),
+                            // Logo and Title
+                            const Icon(Icons.account_circle, size: 80, color: Colors.blue),
                             const SizedBox(height: 16),
-                            _buildTextField("Password", "Enter your password",
-                                controller: _passwordController, obscure: true),
-                            if (_errorMessage != null) ...[
-                              const SizedBox(height: 12),
+                            const Text(
+                              "Please select your preferred login method",
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Choose how you want to access your account",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Error Message Display
+                            if (_errorMessage != null)
                               Container(
                                 padding: const EdgeInsets.all(12),
+                                margin: const EdgeInsets.only(bottom: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red[50],
+                                  color: Colors.red.shade50,
+                                  border: Border.all(color: Colors.red.shade200),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Text(_errorMessage!,
-                                    style: TextStyle(color: Colors.red[700])),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.red.shade600, size: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: TextStyle(
+                                          color: Colors.red.shade600,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                            const SizedBox(height: 24),
-                            SizedBox(
+
+                            // Gmail Login Button
+                            Container(
                               width: double.infinity,
                               height: 50,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : (_isSignUp ? _signUp : _signIn),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: _isLoading ? null : _signInWithGmail,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue[600],
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black87,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.mail, size: 20),
+                                label: const Text("Login with Gmail"),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Gmail Register Button
+                            Container(
+                              width: double.infinity,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.blue[600],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ElevatedButton.icon(
+                                onPressed: _isLoading ? null : _registerWithGmail,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: _isLoading
-                                    ? const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      )
-                                    : Text(_isSignUp ? "Sign Up" : "Sign In",
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white)),
+                                icon: const Icon(Icons.person_add, size: 20),
+                                label: const Text("Register with Gmail"),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(_isSignUp ? "Already have an account? " : "Don't have an account? ",
-                                    style: TextStyle(color: Colors.grey[600])),
-                                GestureDetector(
-                                  onTap: () {
-                                    if (mounted) {
-                                      setState(() {
-                                        _isSignUp = !_isSignUp;
-                                        _errorMessage = null;
-                                      });
-                                    }
-                                  },
-                                  child: Text(_isSignUp ? "Sign In" : "Sign Up",
-                                      style: TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                              ],
                             ),
                           ],
                         ),
@@ -370,34 +416,6 @@ class _ResidentLoginScreenState extends State<ResidentLoginScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTextField(String label, String hint, {bool obscure = false, TextEditingController? controller, bool isEmail = false, bool isName = false, bool isPhone = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          obscureText: obscure,
-          autofillHints: isEmail ? [AutofillHints.email] : 
-                         isName ? [AutofillHints.name] :
-                         isPhone ? [AutofillHints.telephoneNumber] :
-                         obscure ? [AutofillHints.password] : null,
-          keyboardType: isEmail ? TextInputType.emailAddress :
-                      isPhone ? TextInputType.phone :
-                      TextInputType.text,
-          decoration: InputDecoration(
-            hintText: hint,
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          ),
-        ),
-      ],
     );
   }
 }

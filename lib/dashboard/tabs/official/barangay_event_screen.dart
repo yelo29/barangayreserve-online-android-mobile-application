@@ -115,10 +115,13 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    
     return Scaffold(
+      backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
       appBar: AppBar(
         title: Text('Create Barangay Event'),
-        backgroundColor: Colors.blue,
+        backgroundColor: isDarkMode ? Colors.grey.shade800 : Colors.blue,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -132,19 +135,19 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDarkMode ? Colors.grey.shade800 : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: isDarkMode ? Colors.grey.shade600 : Colors.blue.shade200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Facility: ${widget.facility.name}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: isDarkMode ? Colors.blue.shade300 : Colors.blue,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -152,7 +155,7 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                       'This event will block the selected date from public booking',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -161,22 +164,26 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
               const SizedBox(height: 24),
 
               // Event Details
-              const Text(
+              Text(
                 'Event Details',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _eventNameController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Event Name',
                   hintText: 'Enter event name',
+                  labelStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                  hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade500 : Colors.grey),
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.event),
+                  prefixIcon: Icon(Icons.event, color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -189,11 +196,14 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
 
               TextFormField(
                 controller: _eventDescriptionController,
-                decoration: const InputDecoration(
+                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                decoration: InputDecoration(
                   labelText: 'Event Description',
                   hintText: 'Describe the event',
+                  labelStyle: TextStyle(color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
+                  hintStyle: TextStyle(color: isDarkMode ? Colors.grey.shade500 : Colors.grey),
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
+                  prefixIcon: Icon(Icons.description, color: isDarkMode ? Colors.grey.shade400 : Colors.black87),
                 ),
                 maxLines: 3,
                 validator: (value) {
@@ -206,11 +216,12 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
               const SizedBox(height: 24),
 
               // Date Selection
-              const Text(
+              Text(
                 'Event Date',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
                 ),
               ),
               const SizedBox(height: 16),
@@ -221,15 +232,15 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey.shade50,
+                    color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
-                        color: Colors.blue,
+                        color: isDarkMode ? Colors.blue.shade300 : Colors.blue,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -239,8 +250,8 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                               : 'Select event date',
                           style: TextStyle(
                             color: _selectedDate != null
-                                ? Colors.black87
-                                : Colors.grey.shade600,
+                                ? (isDarkMode ? Colors.white : Colors.black87)
+                                : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                             fontWeight: _selectedDate != null
                                 ? FontWeight.normal
                                 : FontWeight.w500,
@@ -249,7 +260,7 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                       ),
                       Icon(
                         Icons.arrow_drop_down,
-                        color: Colors.grey.shade600,
+                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                     ],
                   ),
@@ -261,19 +272,19 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: isDarkMode ? Colors.orange.shade900 : Colors.orange.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
+                  border: Border.all(color: isDarkMode ? Colors.orange.shade700 : Colors.orange.shade200),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.orange.shade600),
+                    Icon(Icons.warning, color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade600),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'This event will block the selected date from resident booking and will appear as green on the calendar.',
                         style: TextStyle(
-                          color: Colors.orange.shade600,
+                          color: isDarkMode ? Colors.orange.shade300 : Colors.orange.shade600,
                           fontSize: 14,
                         ),
                       ),
@@ -288,18 +299,18 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade50,
+                    color: isDarkMode ? Colors.red.shade900 : Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
+                    border: Border.all(color: isDarkMode ? Colors.red.shade700 : Colors.red.shade200),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error, color: Colors.red.shade600),
+                      Icon(Icons.error, color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red.shade600),
+                          style: TextStyle(color: isDarkMode ? Colors.red.shade300 : Colors.red.shade600),
                         ),
                       ),
                     ],
@@ -314,7 +325,7 @@ class _BarangayEventScreenState extends State<BarangayEventScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _createEvent,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: isDarkMode ? Colors.blue.shade700 : Colors.blue,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
